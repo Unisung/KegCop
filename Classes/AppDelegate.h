@@ -6,27 +6,26 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "ViewControllerWebService.h"
 
-@interface AppDelegate : UIResponder <UIApplicationDelegate> {
-    
-}
+@class AppDelegate;
+
+@protocol AppDelegateDelegate
+-(NSData *)passDeviceToken;
+@end
+
+@interface AppDelegate : UIResponder <UIApplicationDelegate> { }
 
 // the below property is important
 // http://developer.apple.com/library/ios/#releasenotes/Miscellaneous/RN-AdoptingStoryboards/_index.html
 
+
++ (id)sharedManager;
+
 @property (strong, nonatomic) UIWindow *window;
-
-
-// removed "readonly" 
-
-@property (strong, nonatomic) NSManagedObjectContext *managedObjectContext; // gateway into saving objects, NOT thread safe
-@property (readonly, strong, nonatomic) NSManagedObjectModel *managedObjectModel; // collection of entity descriptions
-@property (readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
-
-- (void)saveContext;
-- (NSURL *)applicationDocumentsDirectory; // how the managedObjectModel finds where to save the sqlite database.
-
-
-
+@property (nonatomic, retain) UIStoryboard *storyboard;
+@property (nonatomic, retain) NSData *deviceToken;
+@property (nonatomic, retain) NSString *tokenString;
+@property (assign, nonatomic) id<AppDelegateDelegate> delegate;
 
 @end

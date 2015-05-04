@@ -18,7 +18,6 @@
 // end Forgot
 
 - (IBAction)dismissKeyboard:(id)sender;
-
 - (IBAction)dismissScene:(id)sender;
 @end
 

@@ -9,19 +9,32 @@
 #import "ViewControllerRootHomeLeftPanel.h"
 #import "ViewControllerRootHome.h"
 #import "ViewControllerRootHomeCenter.h"
+#import "KCModalPickerView.h"
+#import "KCModalPickerViewForCredit.h"
+#import "ViewControllerUsers.h"
+#import "Account.h"
+#import "ViewControllerWebService.h"
+#import "ViewControllerDev2.h"
+#import "ViewControllerCalibrate.h"
 
 #define SLIDE_TIMING .25
 
 @interface ViewControllerRootHomeLeftPanel ()
 
 @property (nonatomic, weak) IBOutlet UITableViewCell *cellMain;
+@property (strong, nonatomic) NSArray *items;
+@property (strong, nonatomic) NSArray *userNames;
+@property (strong, nonatomic) NSMutableArray *names;
+@property (strong, nonatomic) NSMutableArray *zeroToFifty;
+@property (strong, nonatomic) NSString  *strSelectedUN;
+@property (strong, nonatomic) UIPickerView *pickerView;
 
 @end
 
-@implementation ViewControllerRootHomeLeftPanel;
-
+@implementation ViewControllerRootHomeLeftPanel {
+    
+}
 @synthesize myDelegate;
-
 
 - (UITableView *)makeTableView {
     CGFloat x = 0;
@@ -44,22 +57,50 @@
     tableView.dataSource = self;
     
     return tableView;
-    
-    
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
+
+    // Core Data
+    if (_managedObjectContext == nil)
+    {
+        _managedObjectContext = [[AccountsDataModel sharedDataModel]mainContext];
+#ifdef DEBUG
+        NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
+#endif
+    }
     
+    NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
+    
+    NSEntityDescription *entity = [NSEntityDescription entityForName:@"Account" inManagedObjectContext:_managedObjectContext];
+    request.resultType = NSDictionaryResultType;
+    request.propertiesToFetch = [NSArray arrayWithObject:[[entity propertiesByName] objectForKey:@"username"]];
+    request.returnsDistinctResults = YES;
+    
+    _userNames = [_managedObjectContext executeFetchRequest:request error:nil];
     
     // tableView cell options
-    _options = [[NSMutableArray alloc] initWithObjects:@"test", @"Manage Accounts", @"Logoff", nil];
+    _options = [[NSMutableArray alloc] initWithObjects:@"Add Credits", @"Change Pin",@"Calibrate", @"Logoff", nil];
+    
+//    @"Test Bluno Connection"
+//    @"Connect to Web Service",
+    
+    // nums for Add Credits
+    _zeroToFifty = [NSMutableArray arrayWithCapacity:50];
+    for (int j=0; j < 50; j++) {
+        [_zeroToFifty addObject:[NSString stringWithFormat:@"%d",j]];
+    }
+
+    
     
     
     self.tableView = [self makeTableView];
     [self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:@"Options"];
     [self.view addSubview:self.tableView];
+    
+    // load array items - TEMP ITEMS TO LOAD IN UIPICKERVIEW
+    self.items = [NSArray arrayWithObjects:@"Red",@"Green",@"Blue", nil];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -82,7 +123,6 @@
     return [_options count];
 }
 
-
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
@@ -91,9 +131,7 @@
 #pragma mark - table view delegate
 
 - (void)showViewControllerRootHomeCenter {
-    
-    if (self.myDelegate)
-    {
+    if (self.myDelegate){
         [myDelegate loadVCRH];
     }
 }
@@ -102,33 +140,97 @@
     
     NSString *currentString = [tableView cellForRowAtIndexPath:indexPath].textLabel.text;
     
+    if ([currentString isEqualToString:@"Calibrate"]) {
+        [self showCalibrate];
+    }
+         
+    
     if ([currentString isEqualToString:@"Logoff"]) {
-        NSLog(@"Logout button pressed");
         [self dismissViewControllerAnimated:YES completion:nil];
     }
     
-    if ([currentString isEqualToString:@"Manage Accounts"]) {
-        NSLog(@"Manage Accounts button pressed");
+    if ([currentString isEqualToString:@"Add Credits"]) {
+        if (self.parentViewController.isViewLoaded)
+        {
+            NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+            
+            NSEntityDescription *entity = [NSEntityDescription entityForName:@"Account" inManagedObjectContext:_managedObjectContext];
+            [fetchRequest setEntity:entity];
+            
+            fetchRequest.propertiesToFetch = [NSArray arrayWithObject:[[entity propertiesByName] objectForKey:@"username"]];
+            
+            NSError *error = nil;
+            NSArray *result = [self.managedObjectContext executeFetchRequest:fetchRequest error:&error];
+            
+            if (error) {
+#ifdef DEBUG
+                NSLog(@"Unable to execute fetch request.");
+                NSLog(@"%@, %@", error, error.localizedDescription);
+#endif
+            } else {
+#ifdef DEBUG
+                NSLog(@"%@", result);
+#endif
+            }
+            
+            _names = [NSMutableArray arrayWithCapacity:[result count]];
+            for (Account *account in result) {
+                NSString *accountName = account.username;
+                if (!accountName) {
+                    accountName = @"<Unknown Account>";
+                }
+                [_names addObject:accountName];
+            }
+
+            KCModalPickerViewForCredit *pickerView = [[KCModalPickerViewForCredit alloc] initWithValues:_names];
+            
+            [pickerView presentInView:self.parentViewController.view withBlock:^(BOOL madeChoice) { }];
         
-        // do any additional checks / loads for managing accounts.
-        
-        // What is the current view controller? i.e. print current vc
-        NSLog(@"The current vc is %@",self);
-        
-        NSLog(@"The parent vc is %@",self.parentViewController);
-        
-//        [self movePanelToOriginalPosition];
+        [myDelegate loadVCRH];
+
+        }
+    }
+    
+    if ([currentString isEqualToString:@"Change Pin"]) {
+        UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
+        UIViewController *changePinVC = [storyboard instantiateViewControllerWithIdentifier:@"users"];
+        changePinVC.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+        [self presentViewController:changePinVC animated:YES completion:nil];
+    }
+    
+    if ([currentString isEqualToString:@"Create Web Service"]) {
+        ViewControllerWebService *webServiceVC = [[ViewControllerWebService alloc] initWithNibName:@"ViewControllerWebService" bundle:nil];
+        // establish delegate for vc
+        webServiceVC.delegate = self;
+        [self presentViewController:webServiceVC animated:YES completion:nil];
+    }
+    
+    if ([currentString isEqualToString:@"Test Bluno Connection"]) {
+        AppDelegate *appDelegate = APPDELEGATE;
+        UIStoryboard *storyboard = appDelegate.storyboard;
+        ViewControllerDev2 *blunoTestVC = [storyboard instantiateViewControllerWithIdentifier:@"dev2"];
+        [self presentViewController:blunoTestVC animated:YES completion:nil];
     }
 }
 
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
+-(void)showCalibrate{
+    // load the ViewControllerCalibrate class / XIB
+//    NSLog(@"inside showCalibrate method");
+    
+    ViewControllerCalibrate *calibrateVC = [[ViewControllerCalibrate alloc] initWithNibName:@"ViewControllerCalibrate" bundle:nil];
+    [((ViewControllerRootHome *)self.parentViewController).viewControllerRootHomeCenter addChildViewController:calibrateVC];
+    [calibrateVC.view setFrame:CGRectMake(0.0f, 64.0f, self.view.frame.size.width, self.view.frame.size.height)];
+    
+    [calibrateVC didMoveToParentViewController:((ViewControllerRootHome *)self.parentViewController).viewControllerRootHomeCenter];
+    
+    [((ViewControllerRootHome *)self.parentViewController).viewControllerRootHomeCenter.view addSubview:calibrateVC.view];
+    
+//    [((ViewControllerRootHome *)self.parentViewController) presentViewController:calibrateVC animated:NO completion:nil];
+    
+    [myDelegate loadVCRH];
 }
-*/
-
+# pragma mark - device orientation
+- (NSUInteger)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskAll;
+}
 @end

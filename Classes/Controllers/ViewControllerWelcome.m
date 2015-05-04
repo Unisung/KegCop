@@ -5,71 +5,50 @@
 //  Created by capin on 6/3/12.
 //
 
-
 #import "ViewControllerWelcome.h"
-#import "NSData+AES256.h"
-#import <dispatch/dispatch.h> // Grand Central Dispatch
-#import "AFNetworking.h" // added to test coacopods implementation
-#import <QuartzCore/QuartzCore.h> // added to see if button outlines / borders would respond properly in iOS 7
 
-// GCD doesn't require linking to any new frameworks! :)
+#define TimeStamp [NSString stringWithFormat:@"%f",[[NSDate date] timeIntervalSince1970] * 1000]
 
 @interface ViewControllerWelcome ()
 {
 // declare private methods here
     dispatch_queue_t scan_queue;
+    UIScrollView *avatarScroll;
 }
+@property(nonatomic, retain) NSDate *loginTime;
+@property(nonatomic, retain) UIButton *avatarButton;
+@property(nonatomic, retain) NSArray *results;
+@property(nonatomic, retain) NSMutableArray *last5LoginArray;
 @end
 
-@implementation ViewControllerWelcome
+@implementation ViewControllerWelcome {
+    // toolbar
+    IBOutlet UIToolbar *toolBar;
+    NSString *username;
+        
+    // RFID stuff
+    NSMutableString *scantagid;
+        
+    // legal disclaimer
+    UIAlertView *alertlegal;
+        
+    // Navigation bar
+    UINavigationBar *navBar;
+    
+    AppDelegate *appDelegate;
+    UIStoryboard *storyboard;
+}
 
-//
-// Notes
-//
-// it's bad not to use the "= _" SO USE IT! (-.-)
-// synthesize allocates room for the pointer (o.O)
-// synthesize creates the setter and the getter
-// use the "getter" whenever we want to talk to a UI element.
-// all synthesize does is make the instance variable for the pointer
-// think of the controller as a way your model is presented to the user
-// "id" is a pointer to ANY type of object.
-//
-//
+- (NSString *)receiveUserName {
+    
+    return _textFieldUsername.text;
+}
 
-// Welcome screen
-@synthesize welcomeScroller = _welcomeScroller;
-@synthesize textFieldUsername = _textFieldUsername;
-@synthesize textFieldPin = _textFieldPin;
-@synthesize wrongUserPin = _wrongUserPin;
-@synthesize welcomeLogin = _welcomeLogin;
-@synthesize btnForgot = _btnForgot;
-@synthesize btnCreate = _btnCreate;
-@synthesize welcomeActivityIndicator = _welcomeActivityIndicator;
-@synthesize welcomeAbout = _welcomeAbout;
-@synthesize dev = _dev;
-
-// Core Data
-@synthesize managedObjectContext = _managedObjectContext;
-
-// keyboard toolbar
-@synthesize doneButton = _doneButton;
-
-// end welcome
-
-//
-// ViewControllerWelcome Methods
-//
-
+#pragma mark viewDidLoad
 - (void)viewDidLoad {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
-    NSLog(@"execution reached here");
-    
-    
     // add borders for buttons, iOS 7 fix - 5JAN14
-    
-    // use tbs color scheme
-    
+    // use twitterbootstrap color scheme
     // www.javascripter.net/faq/hextorgb.htm
     
     _welcomeLogin.layer.borderWidth=1.0f;
@@ -86,8 +65,9 @@
                                               green:255/255.0
                                                blue:255/255.0
                                               alpha:1.0f] forState:UIControlStateNormal];
-    // end welcome btn
+    _welcomeLogin.layer.cornerRadius = 5;
     
+    // end welcome btn
     
     _btnForgot.layer.borderWidth=1.0f;
     _btnForgot.layer.borderColor=[[UIColor colorWithRed: 172/255.0f
@@ -105,6 +85,7 @@
                                               green:255/255.0
                                                blue:255/255.0
                                               alpha:1.0f] forState:UIControlStateNormal];
+    _btnForgot.layer.cornerRadius = 5;
     // end forgot btn
     
     
@@ -126,7 +107,8 @@
                                                blue:255/255.0
                                               alpha:1.0f] forState:UIControlStateNormal];
     
-    
+    _btnCreate.layer.cornerRadius = 5;
+    // end _btnCreate
     
     // load Welcome Scrollview
     [_welcomeScroller setContentSize:CGSizeMake(320,750)];
@@ -142,29 +124,24 @@
     // Core Data
     if (_managedObjectContext == nil)
     {
-        _managedObjectContext = [(AppDelegate *)[[UIApplication sharedApplication] delegate] managedObjectContext];
-        NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
-
+        _managedObjectContext = [[AccountsDataModel sharedDataModel]mainContext];
+#ifdef DEBUG
+    NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
+#endif
     }    
     
     // dev button
     _dev.hidden=TRUE;
     
-    NSLog(@"execution reached before scan_queue");
     // threading stuff - GCD
     scan_queue = dispatch_queue_create("com.chrisrjones.kegcop", NULL);
-    NSLog(@"execution reached after scan_queue");
     
     // put blocks of code into curly braces to run on separate thread
     dispatch_async(scan_queue, ^{
         
-        NSLog(@"execution reached before serial handShake");
-//        [serial handShake];
-        NSLog(@"execution reached after serial handShake");
-    
+        // execute on separate thread (non main)
+        
     });
-    
-    NSLog(@"execution is at end of ViewDidLoad method");
     
     // RFID stuff
     scantagid = [[NSMutableString alloc] init];
@@ -175,17 +152,20 @@
     
     UINavigationItem *titleItem = [[UINavigationItem alloc] initWithTitle:@"KegCop"];
     
-//    [navBar setBarStyle:UIStatusBarStyleLightContent];
-    
     navBar.items = @[titleItem];
     
-    navBar.barTintColor = [UIColor blackColor];
-//    navBar.tintColor = [UIColor whiteColor];
-//    navBar.titleTextAttributes = [[NSDictionary dictionaryWithObjectsAndKeys:[UIColor whiteColor], NSForegroundColorAttributeName,nil];
-    navBar.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor whiteColor]};
-    navBar.translucent = YES;
+    navBar.barTintColor = [UIColor colorWithRed:100.0f/255.0f
+                                          green:83.0f/255.0f
+                                           blue:0.0f/255.0f
+                                          alpha:1.0f];
+    navBar.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor colorWithRed:255.0f/255.0f
+                green:239.0f/255.0f
+                blue:160.0f/255.0f
+                alpha:1.0f]};
+    navBar.translucent = NO;
     
     [self.view addSubview:navBar];
+    // END navBar
     
     
     // get the status bar back
@@ -196,35 +176,139 @@
     _textFieldUsername.layer.borderColor = [UIColor whiteColor].CGColor;
 //    _textFieldUsername.layer.cornerRadius = 5;
     _textFieldUsername.layer.masksToBounds = true;
+    
+    // create a subview for avatar buttons
+    UIView *avatarView = [[UIView alloc] init];
+    avatarView.frame = CGRectMake(20, 125, 280, 100); // don't mess with these values.
+//    avatarView.layer.borderColor = [UIColor redColor].CGColor;
+//    avatarView.layer.borderWidth = 3.0f;
+    [self.view addSubview:avatarView];
+    
+    avatarScroll = [[UIScrollView alloc] initWithFrame:CGRectMake(0,0, self.view.frame.size.width, self.view.frame.size.height)];
+    avatarScroll.contentSize = CGSizeMake(500, 500);
+    avatarScroll.scrollEnabled = YES;
+    [avatarView addSubview:avatarScroll];
+    
+    
+//    [self addAvatarsToButtons];
+    
+    
+    // change color of txt for tfUserName / tfPin
+    _textFieldUsername.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                     green:83.0f/255.0f
+                                                      blue:0.0f/255.0f
+                                                     alpha:1.0f];
+    
+    _textFieldPin.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                   green:83.0f/255.0f
+                                                    blue:0.0f/255.0f
+                                                   alpha:1.0f];
+    
+    
+    // hide forgot pin btn
+    _btnForgot.hidden = TRUE;
+}
+
+-(void)fillUserName {
+#ifdef DEBUG
+    NSLog(@"avatar button press works :)");
+#endif
+    
+    // need to get NSMutableArray *avatars from addAvatarsToButtons method
+}
+
+-(void)fetchAvatarLoginsAndCreateAvatarButtons {
+    // fetch Data from Core Data
+    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+    NSEntityDescription *entity = [NSEntityDescription entityForName:@"Account" inManagedObjectContext:_managedObjectContext];
+    [fetchRequest setEntity:entity];
+    
+    // fetch records and handle error
+    NSError *error;
+    _results = [_managedObjectContext executeFetchRequest:fetchRequest error:&error];
+    
+    // sort results array by lastLogin
+    NSSortDescriptor *sort = [NSSortDescriptor sortDescriptorWithKey:@"lastLogin" ascending:NO];
+    NSArray *sortedArray = [NSArray arrayWithObject:sort];
+    NSArray *sortedArray2 = [_results sortedArrayUsingDescriptors:sortedArray];
+    // how to remove values from NSArray
+    NSArray *lastLoginArray = [sortedArray2 valueForKey:@"lastLogin"];
+    
+    _last5LoginArray = [[NSMutableArray alloc] initWithArray:[lastLoginArray subarrayWithRange:NSMakeRange(0, 5)] ];
+#ifdef DEBUG
+    NSLog(@"last5LoginArray = %@",_last5LoginArray);
+#endif
+    
+    CGFloat staticX = 0;
+    CGFloat staticWidth = 80;
+    CGFloat staticHeight = 80;
+    CGFloat staticPadding = 5;
+    
+    // need to put the avatars stored in sortedArray2 in the scrollView
+    for ( int i = 0; i < 5; i++) {
+        // do additional loading for avatars
+        _avatarButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+        // the last two values control the size of the button
+        _avatarButton.frame = CGRectMake(0, 0, 80, 80);
+        [_avatarButton setFrame:CGRectMake((staticX + (i * (staticHeight + staticPadding))),5,staticWidth,staticHeight)];
+        // make corners round
+        _avatarButton.layer.cornerRadius = 40; // value varies -- // 35 yields a pretty good circle.
+        _avatarButton.clipsToBounds = YES;
+        // assign method / action to button
+        [_avatarButton addTarget:self action:@selector(fillUserName) forControlEvents:UIControlEventTouchDown];
+        // create a stock image
+        UIImage *btnImage = [UIImage imageNamed:@"HomeBrewPoster1.jpg"];
+        
+        [_avatarButton setBackgroundImage:btnImage forState:UIControlStateNormal];
+        
+        // this should add 5x buttons
+        [avatarScroll addSubview:_avatarButton];
+    }
+}
+
+-(void)addAvatarsToButtons {
+    NSMutableArray *avatars = [NSMutableArray arrayWithCapacity:5];
+    Account *anAccount;
+    for ( anAccount in _results) {
+        if( anAccount.avatar == nil) {
+            UIImage *avtarImg = [UIImage imageNamed:@"HomeBrewPoster1.jpg"];
+            // convert UIImage to NSData
+            NSData *imageData = UIImageJPEGRepresentation(avtarImg, 1.0);
+            // save data to account
+            anAccount.avatar = imageData;
+            NSError *error = nil;
+            if (![_managedObjectContext save:&error]) {
+#ifdef DEBUG
+                NSLog(@"error %@", error);
+#endif
+            }
+        }else if([_last5LoginArray containsObject:anAccount.lastLogin]) { // the following line could be trouble
+#ifdef DEBUG
+            NSLog(@"anAccount.lastLogin = %@",anAccount.lastLogin);
+#endif
+            UIImage *avatarImg = [UIImage imageWithData:anAccount.avatar ];
+            // apply avImg to btn
+            [avatars addObject:avatarImg];
+        }
+    }
+#ifdef DEBUG
+    NSLog(@"avatars = %@",avatars);
+#endif
+NSAssert(
+         avatars.count == _last5LoginArray.count
+,@"The loop is expected to find as many avatars as there are items in last5LoginArray"
+);
+    for ( int i = 0; i<5; i++) {
+        // check that we have enough logins
+        if ( i < _last5LoginArray.count) {
+            [_avatarButton setBackgroundImage:avatars[i] forState:UIControlStateNormal];
+        }
+    }
 }
 
 -(UIStatusBarStyle)preferredStatusBarStyle{
     return UIStatusBarStyleLightContent;
 }
-
-- (void)viewDidUnload {
-    [self setTextFieldUsername:nil];
-    [self setTextFieldPin:nil];
-    
-    [self setWrongUserPin:nil];
-    [self setWelcomeLogin:nil];
-    [self setWelcomeActivityIndicator:nil];
-    
-    
-    
-    [self setWelcomeScroller:nil];
-    [self setWelcomeAbout:nil];
-    [self setDev:nil];
-    [self setBtnForgot:nil];
-    [self setBtnCreate:nil];
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
-    
-    // close serial port
-    [serial close];
-}
-
-
 
 -(BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {  
     return YES; 
@@ -235,20 +319,16 @@
     [textField setInputAccessoryView:toolBar];
 }
 
-
 - (IBAction)dismissKeyboard:(id)sender {
     // welcome
     [_textFieldUsername resignFirstResponder];
     [_textFieldPin resignFirstResponder];
 }
 
-
 // method to dismiss keyboard - return button
 - (IBAction) textFieldDoneEditing : (id) sender {
     [sender resignFirstResponder];
 }
-
-
 
 - (IBAction)processLogin:(id)sender {
     
@@ -260,9 +340,6 @@
     // First - make activity indicator visible, then start animating, then turn of wrong user / pin label
     _welcomeActivityIndicator.hidden = FALSE;
     [_welcomeActivityIndicator startAnimating ];
-    // delay execution of my block for X seconds.
-    //dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_current_queue(), ^{
-    
     
     [_wrongUserPin setHidden:YES];
         
@@ -290,14 +367,15 @@
     
     // store DB usernames in results array
     NSArray *results = [_managedObjectContext executeFetchRequest:request error:&error];
-    
+#ifdef DEBUG
     NSLog(@"The returned results are %@",results);
-    
-    
+#endif
     // check text field against results stored in DB
     for (Account *anAccount in results) {
         if ([anAccount.username isEqualToString:_textFieldUsername.text]){
+#ifdef DEBUG
             NSLog(@"Your username exists");
+#endif
             
             // PASSWORD - PIN AUTHENTICATION
             
@@ -317,11 +395,11 @@
             NSString *secret = anAccount.pin;
         
             // password - print value of pin stored in DB
+#ifdef DEBUG
             NSLog(@"DB pin = %@",secret);
-            
-            
+#endif
             // password - decode base64 NSData
-            NSData *cipher = [self base64DataFromString:secret];
+            NSData *cipher = [[NSData alloc ]base64DataFromString:secret];
             
             // password - decrypt data
             NSData *plain = [cipher AES256DecryptWithKey:key];
@@ -345,9 +423,11 @@
                 // Load ViewController(Root)Home
                 if([anAccount.username isEqualToString:@"root"])
                 {
-                    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-                    ViewControllerRootHome *roothome = (ViewControllerRootHome *)[storyboard instantiateViewControllerWithIdentifier:@"rootHome"];
-                    [self presentViewController:roothome animated:YES completion:nil];
+//                    appDelegate = APPDELEGATE;
+//                    storyboard = appDelegate.storyboard;
+                    UIStoryboard *storyboardLocal = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
+                    ViewControllerRootHome *rootHome = [storyboardLocal instantiateViewControllerWithIdentifier:@"rootHome"];
+                    [self presentViewController:rootHome animated:YES completion:nil];
                     
                     // clear out / blank tfusername and tfpin
                     _textFieldUsername.text = @"";
@@ -356,14 +436,37 @@
                     [_welcomeActivityIndicator stopAnimating];
                 }
                 else {
-                    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-                    ViewControllerHome *home = (ViewControllerHome *)[storyboard instantiateViewControllerWithIdentifier:@"Home"];
+//                    appDelegate = APPDELEGATE;
+//                    storyboard = appDelegate.storyboard;
+                    UIStoryboard *storyboardLocal = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
+                    
+                    ViewControllerHome *home = [storyboardLocal instantiateViewControllerWithIdentifier:@"Home"];
+                   
+                    // declare delegate property
+                    home.delegate = self;
                     
                     // pass username text to home screen
                     username = _textFieldUsername.text;
                     
-                    [self passValues];
+//                    [self passValues];
                     
+//                    // get current time
+//                    NSString *timestamp = TimeStamp;
+//                    NSLog(@"current time = %@",timestamp); // ex. 1427178876698.blah
+//                    _loginTime = [[NSDate alloc] init];
+//                    
+//                    // adjust timezone
+//                    NSTimeInterval timeZoneOffset = [[NSTimeZone systemTimeZone] secondsFromGMTForDate:_loginTime];
+//                    NSDate *localDate = [_loginTime dateByAddingTimeInterval:timeZoneOffset];
+//                    
+//                    anAccount.lastLogin = localDate;
+//                    NSLog(@"login time = %@",anAccount.lastLogin);
+//                    // save anAccount.lastLogin attribute to Core Data DB
+//                    NSError *error = nil;
+//                    if (![_managedObjectContext save:&error]) {
+//                        NSLog(@"error %@", error);
+//                    }
+
                     [self presentViewController:home animated:YES completion:nil];
                     
                     // clear out / blank tfusername and tfpin
@@ -374,32 +477,39 @@
                 }
             }
             else {
+#ifdef DEBUG
                 NSLog(@"Your pin is wrong");
+#endif
                 [_welcomeActivityIndicator stopAnimating];
                 [_wrongUserPin setHidden:NO];
                 }
             }
     
         else {
+#ifdef DEBUG
             NSLog(@"Your username was not found");
+#endif
             [_welcomeActivityIndicator stopAnimating];
             [_wrongUserPin setHidden:NO];
             }
     }
-    
-   // }); // close curly brace for 2 second delay on login.
 }
 
 - (IBAction)showForgotScene:(id)sender {
-    
+#ifdef DEBUG
+    NSLog(@"show Forgot Scene - begin");
+#endif
     UIViewController *forgot = [self.storyboard instantiateViewControllerWithIdentifier:@"Forgot"];
     [self presentViewController:forgot animated:YES completion:nil];
+#ifdef DEBUG
+    NSLog(@"show Forgot Scene - end");
+#endif
 }
 
 - (IBAction)showCreateScene:(id)sender {
     
     // display a UIAlertView displaying legal disclaimer.
-    alertlegal = [[UIAlertView alloc] initWithTitle:@"Terms of Service" message:@"By clicking agree you abide to the terms of this application.\n\nThis iOS application is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nBy creating an account on this system you are NOT PAYING FOR BEER!  YOU ARE MAKING A DONATION TO THE PERSON WHO IS RESPONSIBLE FOR THE ADMIN / ROOT ACCOUNT ON THE SYSTEM  THE PERSON WHO GOVERNS THE ROOT ACCOUNT ON THE SYSTEM IS NOT RESPONSIBLE FOR YOUR DRIINKING OR THE RESULTS FROM THE BEHAVIOR OF YOUR DRINKING.\n\nThat being said, PLEASE DRINK RESPONSIBLY, AND TRY TO HAVE SOME FUN." delegate:self cancelButtonTitle:@"No Thanks" otherButtonTitles:@"Agree", nil];
+    alertlegal = [[UIAlertView alloc] initWithTitle:@"Terms of Service" message:@"By clicking agree you abide to the terms of this application.\n\nThis iOS application is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the MIT License for more details.\n\nBy creating an account on this system you are NOT PAYING FOR BEER!  YOU ARE MAKING A DONATION TO THE PERSON WHO IS RESPONSIBLE FOR THE ADMIN / ROOT ACCOUNT ON THE SYSTEM  THE PERSON WHO GOVERNS THE ROOT ACCOUNT ON THE SYSTEM IS NOT RESPONSIBLE FOR YOUR DRIINKING OR THE RESULTS FROM THE BEHAVIOR OF YOUR DRINKING.\n\nThat being said, PLEASE DRINK RESPONSIBLY, AND TRY TO HAVE SOME FUN." delegate:self cancelButtonTitle:@"No Thanks" otherButtonTitles:@"Agree", nil];
     
     // set the size of the UIAlertView
     //alertlegal.frame = CGRectMake(0, 200, 200, 200);
@@ -409,7 +519,7 @@
     
     // start x, start y, width, height
     
-    [textView setText:@"This iOS application is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\n\nBy creating an account on this system you are NOT PAYING FOR BEER!  YOU ARE MAKING A DONATION TO THE PERSON WHO IS RESPONSIBLE FOR THE ADMIN / ROOT ACCOUNT ON THE SYSTEM  THE PERSON WHO GOVERNS THE ROOT ACCOUNT ON THE SYSTEM IS NOT RESPONSIBLE FOR YOUR DRIINKING OR THE RESULTS FROM THE BEHAVIOR OF YOUR DRINKING.\n\nThat being said, PLEASE DRINK RESPONSIBLY, AND TRY TO HAVE SOME FUN.\n\nBy clicking the agree button seen below this text I am stating that I have read this disclaimer, and that I will agree to the terms posted in this disclaimer."];
+    [textView setText:@"This iOS application is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the MIT License for more details.\n\nBy creating an account on this system you are NOT PAYING FOR BEER!  YOU ARE MAKING A DONATION TO THE PERSON WHO IS RESPONSIBLE FOR THE ADMIN / ROOT ACCOUNT ON THE SYSTEM  THE PERSON WHO GOVERNS THE ROOT ACCOUNT ON THE SYSTEM IS NOT RESPONSIBLE FOR YOUR DRIINKING OR THE RESULTS FROM THE BEHAVIOR OF YOUR DRINKING.\n\nThat being said, PLEASE DRINK RESPONSIBLY, AND TRY TO HAVE SOME FUN.\n\nBy clicking the agree button seen below this text I am stating that I have read this disclaimer, and that I will agree to the terms posted in this disclaimer."];
     
     textView.editable = NO;
     
@@ -448,10 +558,7 @@
     // method to show the About Screen
     UIViewController *about = [self.storyboard instantiateViewControllerWithIdentifier:@"About"];
     [self presentViewController:about animated:YES completion:nil];
-    
-    
 }
-
 
 // method keyboard behavior
 
@@ -461,9 +568,6 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
-   
-    NSLog(@"method was loaded at startup");
-    printf("the printf statement is read");
 }
 
 // method keyboard behavior
@@ -519,142 +623,9 @@
     else if([self.textFieldPin isFirstResponder])[self.textFieldUsername becomeFirstResponder];
 }
 
-- (IBAction)processDev:(id)sender {
-    
-    // dev btn pressed
-    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-    ViewControllerDev *dev = (ViewControllerDev *)[storyboard instantiateViewControllerWithIdentifier:@"dev"];
-    [self presentViewController:dev animated:YES completion:nil];
-    
-}
-
--(void) passValues {
-    ModelWelcome *modelwelcome = [ModelWelcome sharedModelWelcome];
-    modelwelcome.passedText = username;
-}
-
-
-- (NSData *)base64DataFromString: (NSString *)string
-{
-unsigned long ixtext, lentext;
-unsigned char ch, inbuf[4], outbuf[3];
-short i, ixinbuf;
-Boolean flignore, flendtext = false;
-const unsigned char *tempcstring;
-NSMutableData *theData;
-
-if (string == nil)
-{
-    return [NSData data];
-}
-
-ixtext = 0;
-
-tempcstring = (const unsigned char *)[string UTF8String];
-
-lentext = [string length];
-
-theData = [NSMutableData dataWithCapacity: lentext];
-
-ixinbuf = 0;
-
-while (true)
-{
-    if (ixtext >= lentext)
-    {
-        break;
-    }
-    
-    ch = tempcstring [ixtext++];
-    
-    flignore = false;
-    
-    if ((ch >= 'A') && (ch <= 'Z'))
-    {
-        ch = ch - 'A';
-    }
-    else if ((ch >= 'a') && (ch <= 'z'))
-    {
-        ch = ch - 'a' + 26;
-    }
-    else if ((ch >= '0') && (ch <= '9'))
-    {
-        ch = ch - '0' + 52;
-    }
-    else if (ch == '+')
-    {
-        ch = 62;
-    }
-    else if (ch == '=')
-    {
-        flendtext = true;
-    }
-    else if (ch == '/')
-    {
-        ch = 63;
-    }
-    else
-    {
-        flignore = true; 
-    }
-    
-    if (!flignore)
-    {
-        short ctcharsinbuf = 3;
-        Boolean flbreak = false;
-        
-        if (flendtext)
-        {
-            if (ixinbuf == 0)
-            {
-                break;
-            }
-            
-            if ((ixinbuf == 1) || (ixinbuf == 2))
-            {
-                ctcharsinbuf = 1;
-            }
-            else
-            {
-                ctcharsinbuf = 2;
-            }
-            
-            ixinbuf = 3;
-            
-            flbreak = true;
-        }
-        
-        inbuf [ixinbuf++] = ch;
-        
-        if (ixinbuf == 4)
-        {
-            ixinbuf = 0;
-            
-            outbuf[0] = (inbuf[0] << 2) | ((inbuf[1] & 0x30) >> 4);
-            outbuf[1] = ((inbuf[1] & 0x0F) << 4) | ((inbuf[2] & 0x3C) >> 2);
-            outbuf[2] = ((inbuf[2] & 0x03) << 6) | (inbuf[3] & 0x3F);
-            
-            for (i = 0; i < ctcharsinbuf; i++)
-            {
-                [theData appendBytes: &outbuf[i] length: 1];
-            }
-        }
-        
-        if (flbreak)
-        {
-            break;
-        }
-    }
-}
-
-return theData;
-}
-
 -(void)onTick:(NSTimer *)timer {
     // do something
 }
-
-
 
 // create a method that spawns a new thread to listen for an RFID badge scan / swipe
 
@@ -669,41 +640,9 @@ return theData;
     
 }
 
-# pragma mark - JailbrokenSerialDelegate
-
-- (void) JailbrokenSerialReceived:(char) ch {
-    
-    NSLog(@"inside JailbrokenSerialReceived method");
-    
-    NSString *s = [NSString stringWithFormat:@"%c",ch];
-    
-    NSLog(@"s = %@",s);
-    
-    [scantagid appendString:s];
-    
-    NSLog(@"scantagid = %@", scantagid);
+# pragma mark - device orientation
+- (NSUInteger)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskPortrait;
 }
-
-
-
-
-//- (void) openSerial {
-//    
-//    // serial stuff
-//    serial = [[JailbrokenSerial alloc] init];
-//    serial.debug = true;
-//    serial.nonBlock = true;
-//    serial.receiver = self;
-//    
-//    // serial stuff contd...
-//    [serial open:B2400];
-//    if (serial.isOpened)
-//    {
-//        NSLog(@"Serial Port Opened");
-//    }
-//    else NSLog(@"Serial Port Closed");
-//    
-//}
-
 
 @end

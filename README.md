@@ -1,17 +1,17 @@
-# KegCop
+# KegCop [![Build Status](https://travis-ci.org/ipatch/KegCop.svg?branch=master)](https://travis-ci.org/ipatch/KegCop)
 
-[![Wilson demos KegCop](http://img.youtube.com/vi/1a6hxUb3zfU/0.jpg)](http://www.youtube.com/watch?v=1a6hxUb3zfU)
+[![Wilson demos KegCop](http://img.youtube.com/vi/1a6hxUb3zfU/0.jpg)](http://www.youtube.com/watch?v=1a6hxUb3zfU) 
 
 <!-- ![KegCop-splash](http://chrisrjones.com/pics/KegCop-git.png) -->
 
 ## Objective
-The purpose of this software is to create user accounts for a kegerator, and have a root account which recieves donations from the users for the beer they drink.  To find out more information about the project check out the [wiki](https://github.com/ipatch/KegCop/wiki)
+The purpose of this software is to create user accounts for a kegerator, and have a **_root_** account which recieves donations from the users for the beer they drink.  To find out more information about the project check out the [wiki](https://github.com/ipatch/KegCop/wiki)
 
 ## How does it work?
 An iOS device, i.e. iPhone / iPod Touch will connect to a Bluno via Bluetooth 4.0 Low Energy sending serial information to the microcontroller which will communicate with flow sensor(s) and a solenoid cut off valve.  The iOS device will be the user interface for the entire operation, storing account information along with how many credits a particular user will have.
 
 ## Build
-As of 8MAR15, this project is built with Xcode 6.1 using OS X (10.10.2) with a target for iOS 7.x and greater.
+As of 20APR15, this project is built with Xcode 6.1.1 using OS X (10.10.2) with a target for iOS 7.x and greater.
 
 ## License and Copyright
 All code is offered under the MIT license, unless otherwise noted.  Please see LICENSE.txt for
@@ -21,10 +21,10 @@ noted.
 ## Contributing
 I would love for someone to make a branch and start editing some code.  My Objective-C skills leave
 a lot to be desired.  So if you have a great idea, don't hesitate to download the code and
-contribute.
+contribute.  There is a guide for contributing, [here](https://github.com/ipatch/KegCop/wiki/Contribute)
 
 ## Installation
-A binary version of the app can be downloaded if your iOS device is jailbroken.  Add the following
-repo: chrisrjones.com/repo and load the following sketch on your Bluno https://gist.github.com/ipatch/8078083
-cheers
-- Chris
+STAY TUNED, and load the following sketch on your Bluno, from [here](https://github.com/ipatch/KegCop/blob/master/KegCop-Bluno-sketch.c)<br />
+<br />
+cheers<br />
+Chris

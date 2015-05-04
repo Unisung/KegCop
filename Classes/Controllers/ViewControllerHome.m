@@ -6,46 +6,54 @@
 //
 
 #import "ViewControllerHome.h"
-// Added 5AUG13
 #import "ViewControllerCreate.h"
 #import "math.h"
+#import "AccountsDataModel.h"
+#import "ViewControllerAvatar4.h"
+#import "Account.h"
 
-
-
-@interface ViewControllerHome ()
-
+@interface ViewControllerHome () {
+    
+}
+@property (nonatomic, retain) UIImage *avatar;
 @end
 
-@implementation ViewControllerHome
+@implementation ViewControllerHome { }
 
-@synthesize homeScroller = _homeScroller;
-@synthesize lblUSERNAME = _lblUSERNAME;
-@synthesize creditX = _creditX;
-@synthesize btndrinkbeer = _btndrinkbeer;
-@synthesize tfUsername = _tfUsername;
-@synthesize tfCredit = _tfCredit;
-@synthesize btnTradeCredit = _btnTradeCredit;
-@synthesize lblTradeCredit = _lblTradeCredit;
-@synthesize btnAddRFID = _btnAddRFID;
-@synthesize idleTimerTime = _idleTimerTime;
-@synthesize btnLogout = _btnLogout;
-// Core Data
-@synthesize managedObjectContext = _managedObjectContext;
-
-
-
-- (void)viewDidLoad
-{
-    
+- (void)viewDidLoad {
      [super viewDidLoad];
     
-    // Core Data
-    if (_managedObjectContext == nil)
-    {
-        _managedObjectContext = [(AppDelegate *)[[UIApplication sharedApplication] delegate] managedObjectContext];
-        NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
-    }
+    // present UINavigationBar
+    // navBar
+    UINavigationBar *navBar = [[UINavigationBar alloc] init];
+    [navBar setFrame:CGRectMake(0,0,CGRectGetWidth(self.view.frame),60)];
+    
+    UINavigationItem *titleItem = [[UINavigationItem alloc] initWithTitle:@"Home"];
+    
+    navBar.items = @[titleItem];
+    
+    navBar.barTintColor = [UIColor colorWithRed:100.0f/255.0f
+                                          green:83.0f/255.0f
+                                           blue:0.0f/255.0f
+                                          alpha:1.0f];
+    navBar.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor colorWithRed:255.0f/255.0f
+                                                                                   green:239.0f/255.0f
+                                                                                    blue:160.0f/255.0f
+                                                                                   alpha:1.0f]};
+    navBar.translucent = NO;
+    
+    [self.view addSubview:navBar];
+    // end navBar
 
+    
+
+    if (_managedObjectContext == nil) {
+        _managedObjectContext = [[AccountsDataModel sharedDataModel] mainContext];
+#ifdef DEBUG
+        NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
+#endif
+    }
+    
     // load Home Scrollview
     [_homeScroller setContentSize:CGSizeMake(320,750)];
     
@@ -62,49 +70,42 @@
     [removeAccount addTarget:self action:@selector(removeAccount) forControlEvents:UIControlEventTouchUpInside];
     
     // add the button to the scrollview
+    removeAccount.hidden = true;
     [self.homeScroller addSubview:removeAccount];
     
+    
     // change USERNAME label
-    [self changeUSERNAME];
+#ifdef DEBUG
+    NSLog(@" username = %@",[self.delegate receiveUserName]);
+#endif
+    _lblUSERNAME.text = [self.delegate receiveUserName];
     
     // update credit
     [self updateCredit];
     
+    // add roundness to btns
+    _btndrinkbeer.layer.cornerRadius = 5;
+    _btnLogout.layer.cornerRadius = 5;
+    
    
-    
-    
-    // serial stuff
-    serial = [[JailbrokenSerial alloc] init];
-    // print serial debugging messages
-    serial.debug = true;
-    serial.nonBlock = true;
-    serial.receiver = self;
-    rfidbadgenumber = [[NSMutableString alloc] initWithString:@""];
-    
-    // 2AUG13 - more serial stuff
-    [serial open:B115200];
-    if(serial.isOpened)
-    {
-        NSLog(@"Serial Port Opened");
-    }
-    else NSLog(@"Serial Port Closed");
-    
     
     // uialertview init
     // declare an alert with text input
-    alertrfid = [[UIAlertView alloc] initWithTitle:@"Scan RFID badge"
-                                           message:@"Associate RFID badge with user account"
-                                          delegate:self
-                                 cancelButtonTitle:@"Dismiss"
-                                 otherButtonTitles:@"Save", nil];
+//    alertrfid = [[UIAlertView alloc] initWithTitle:@"Scan RFID badge"
+//                                           message:@"Associate RFID badge with user account"
+//                                          delegate:self
+//                                 cancelButtonTitle:@"Dismiss"
+//                                 otherButtonTitles:@"Save", nil];
+//    
     
-    
-    // RFID stuff
-    newrfidtagid = [[NSMutableString alloc] init];
-    
+//    // RFID stuff
+//    newrfidtagid = [[NSMutableString alloc] init];
+//    
     
     // 5AUG13
+#ifdef DEBUG
     NSLog(@"presenting view controller:%@",[self presentingViewController]);
+#endif
     
     // 6AUG13 - idle time logout
     _idleTimerTime.text = @"60 secs til";
@@ -170,38 +171,99 @@
     // Core Bluetooth - added 6FEB14
     self.blunoManager = [DFBlunoManager sharedInstance];
     self.blunoManager.delegate = self;
+#ifdef DEBUG
     NSLog(@"view did load method called");
+#endif
     [self.blunoManager scan];
     
+    
+    // setup code to draw / display avatar
+    UIView *avatarView = [[UIView alloc] init];
+    avatarView.frame = CGRectMake(20, 60, 280, 100);
+
+    // put conditoinal code for DEBUG scheme
+    
+#ifdef DEBUG
+    
+    avatarView.layer.borderColor = [UIColor redColor].CGColor;
+    avatarView.layer.borderWidth = 3.0f;
+    
+#endif
+    
+    [self.view addSubview:avatarView];
+    
+    // do additional loading for avatars
+    UIButton *avatarButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    // the last two values control the size of the button
+    avatarButton.frame = CGRectMake(0, 0, 80, 80);
+    // make corners round
+    avatarButton.layer.cornerRadius = 40; // value varies -- // 35 yields a pretty good circle.
+    avatarButton.clipsToBounds = YES;
+    
+    
+    // hide capture avatar btn
+    _captureAvatar.hidden = true;
+    
+    
+//    // retrieve image from Core Data and place on UIButton
+//    NSFetchRequest *request = [[NSFetchRequest alloc] init];
+//    
+//    // define table / entity to use
+//    NSEntityDescription *entity = [NSEntityDescription entityForName:@"Account"inManagedObjectContext:_managedObjectContext];
+//    [request setEntity:entity];
+////    [request setResultType:NSDictionaryResultType];
+//    [request setReturnsDistinctResults:YES];
+//    [request setPropertiesToFetch:@[@"avatar",@"username"]];
+    
+    // fetch records and handle error
+//    NSError *error;
+//    NSArray *results = [_managedObjectContext executeFetchRequest:request error:&error];
+//    
+//    if (!results) {
+//        // handle error
+//    }
+//    NSLog(@"results = %@",results);
+//    // find specific value in array
+    
+    // convert UILabel.text to NSString for searching
+#ifdef DEBUG
+    NSLog(@"_lblUSERNAME.text = %@",_lblUSERNAME.text);
+#endif
+    
+    
+    NSString *search = _lblUSERNAME.text;
+#ifdef DEBUG
+    NSLog(@"un = %@",search);
+#endif
+    
+//    for (Account *anAccount in results) {
+//        if ([anAccount.username isEqualToString:search]) {
+//            NSLog(@"username found.");
+//            _avatar = [[UIImage alloc] initWithData:anAccount.avatar];
+//            NSLog(@"avatar = %@",_avatar);
+//        }
+//    }
+    if (_avatar == nil) {
+#ifdef DEBUG
+        NSLog(@"couldn't find avatar");
+#endif
+    } else {
+        [avatarButton setBackgroundImage:_avatar forState:UIControlStateNormal];
+    }
+    // add button to subview
+    [avatarView addSubview:avatarButton];
 }
 
-- (void)viewDidUnload
-{
-    [self setHomeScroller:nil];
-    [self setTfUsername:nil];
-    [self setTfCredit:nil];
-    [self setBtnTradeCredit:nil];
-    [self setLblUSERNAME:nil];
-    [self setCreditX:nil];
-    [self setLblTradeCredit:nil];
-    [self setBtndrinkbeer:nil];
-    [self setBtnAddRFID:nil];
-    [self setBtnLogout:nil];
-    [self setIdleTimerTime:nil];
-    [super viewDidUnload];
-    [serial close];
-  
-}
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     return YES;
 }
 
-
-
 - (IBAction)removeAccount {
+#ifdef DEBUG
     NSLog(@"Button Pressed");
+#endif
     
     // TODO present alertview to confirm deletion of account
     alert = [[UIAlertView alloc]initWithTitle:@"Do you really want to delete this account?" message:@"This can not be undone!" delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Delete", nil];    
@@ -228,7 +290,9 @@
 }
 
 - (IBAction)tradeCredit:(id)sender {
+#ifdef DEBUG
     NSLog(@"btnTradeCredit pressed.");
+#endif
     
     NSFetchRequest *request = [[NSFetchRequest alloc] init];
     
@@ -251,7 +315,7 @@
     
     // SUBTRACT - GLOBAL - subtract credit from logged in user
     for (Account *loggeduser in mutableFetchResults) {
-        if ([loggeduser.username isEqualToString:self.lblUSERNAME.text]) {
+        if ([loggeduser.username isEqualToString:_lblUSERNAME.text]) {
             
             // get current credit of logged in user
             int loggedusercurrentcredit = [loggeduser.credit intValue];
@@ -280,24 +344,30 @@
     // ADD - GLOBAL
     for (Account *anAccount in mutableFetchResults) {
         if ([anAccount.username isEqualToString:self.tfUsername.text]) {
+#ifdef DEBUG
             NSLog(@"username found.");
+#endif
             
             // get current credit amount in DB
             int creditcurrent = [anAccount.credit intValue];
             
             // add tf with current credit
             int newcredit = credit + creditcurrent;
+#ifdef DEBUG
             NSLog(@"new credit amount = %i",newcredit);
-            
+#endif
             // save new value to anAccount.credit - convert int to NSNumber
             NSNumber *creditnew = [NSNumber numberWithInt:newcredit];
             anAccount.credit = creditnew;
+#ifdef DEBUG
             NSLog(@"new credit amoutn = %@",creditnew);
-            
+#endif
                         // save results to DB
             NSError *error = nil;
             if (![_managedObjectContext save:&error]) {
+#ifdef DEBUG
                 NSLog(@"error %@", error);
+#endif
             }
             
             // update label credit trade label
@@ -307,8 +377,9 @@
 }
 
 - (IBAction)drinkBeer:(id)sender {
+#ifdef DEBUG
     NSLog(@"pour beer btn pressed");
-    
+#endif
     NSFetchRequest *request = [[NSFetchRequest alloc] init];
     
     // define table / entity to use
@@ -327,7 +398,7 @@
     
     // SUBTRACT - GLOBAL - subtract credit from logged in user
     for (Account *loggeduser in mutableFetchResults) {
-        if ([loggeduser.username isEqualToString:self.lblUSERNAME.text]) {
+        if ([loggeduser.username isEqualToString:_lblUSERNAME.text]) {
             
             // get current credit of logged in user
             int loggedusercurrentcredit = [loggeduser.credit intValue];
@@ -352,14 +423,9 @@
     // save the Core Data context to disk - prevents force quit bug found on 29SEP13
     // save the managed object context / save to DB
     [_managedObjectContext save:&error];
-
-    
-    // stuff added 2AUG13
+#ifdef DEBUG
     NSLog(@"{open_valve} btn tapped.");
-    
-    NSString *command = @"{open_valve}\n";
-    
-    [serial write:command];
+#endif
     
     // 6FEB14 - CoreBluetooth - write message to Arduino
     if (self.blunoDev.bReadyToWrite)
@@ -367,20 +433,23 @@
         NSString *pourBeer = @"{open_valve}";
         NSData *data = [pourBeer dataUsingEncoding:NSUTF8StringEncoding];
         [self.blunoManager writeDataToDevice:data Device:self.blunoDev];
+#ifdef DEBUG
         NSLog(@"data written = %@",data);
+#endif
     }
 
     
 }
 
-/* Begin addRFID - Serial Communication */
-
+/* 
+ * Begin addRFID - Serial Communication
+ */
 - (IBAction)addRFID:(id)sender {
     
     // btnAddRFID pressed
-    
+#ifdef DEBUG
     NSLog(@"rfid badge # is %@",newrfidtagid);
-
+#endif
 
     // set alert with a text input field
     [alertrfid setAlertViewStyle:UIAlertViewStylePlainTextInput];
@@ -391,21 +460,12 @@
     
     // set the delegate for the UIAlertView textfield
     [alertrfid textFieldAtIndex:0].delegate = self;
-    
-    
-    //open serial port
-    
-    [serial open:B2400];
-    if(serial.isOpened) {
-        NSLog(@"Serial Port Opened");
-    }
-    else NSLog(@"Serial Port Closed");
 }
 
 - (IBAction)logout:(id)sender {
+#ifdef DEBUG
     NSLog(@"logout method called");
-    [serial close];
-    
+#endif
     // this condition is satisfied when a new user creates an account then logs out
     if([self.presentingViewController isKindOfClass:[ViewControllerCreate class]] ) {
         
@@ -417,54 +477,52 @@
     [self.blunoManager disconnectToDevice:self.blunoDev];
     
     [self dismissViewControllerAnimated:NO completion:nil];
+#ifdef DEBUG
     NSLog(@"code execution reached here");
+#endif
 }
 
+# pragma mark - addAvatar
+
 - (IBAction)addAvatar:(id)sender {
+    ViewControllerAvatar4 *avatarVC = [[ViewControllerAvatar4 alloc] initWithNibName:@"avatar" bundle:nil];
+    // set the delegate before launching vc
+    avatarVC.delegate = self;
+    [self presentViewController:avatarVC animated:YES completion:nil];
+}
+
+# pragma mark - delegate method
+
+- (NSDictionary *) giveMeData {
+    NSMutableDictionary *dataToReturn = [[NSMutableDictionary alloc] init];
     
-    UIViewController *avatar = [self.storyboard instantiateViewControllerWithIdentifier:@"avatar"];
-    [self presentViewController:avatar animated:YES completion:nil];
+    // how to add lblUSERNAME(.text) to mutable dictionary ?
+    [dataToReturn setObject:_lblUSERNAME.text  forKey:@"username"];
     
+    return dataToReturn;
 }
 
 - (IBAction)showTestScene:(id)sender {
-    UIViewController *test = [self.storyboard instantiateViewControllerWithIdentifier:@"test"];
-    [self presentViewController:test animated:YES completion:nil];
+//    UIViewController *test = [self.storyboard instantiateViewControllerWithIdentifier:@"test"];
+//    [self presentViewController:test animated:YES completion:nil];
 }
 
-
-# pragma mark - JailbrokenSerialDelegate
-- (void) JailbrokenSerialReceived:(char) ch {
-
-//    NSLog(@"got it");
-//
-//    NSString *s = [NSString stringWithFormat:@"%c",ch];
-//    NSLog(@"s = %@",s);
-//
-//    [newrfidtagid appendString:s];
-//
-//    NSLog(@"rfid char  = %@",newrfidtagid);
-//    
-//    if (newrfidtagid.length == 10)
-//    {
-//        NSLog(@"new tagid = %@",newrfidtagid);
-//        [alertrfid textFieldAtIndex:0].text = newrfidtagid;
-//    }
- }
-
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
-    
+#ifdef DEBUG
     NSLog(@"Range: %@", NSStringFromRange(range));
+#endif
     return (textField.text.length - range.length + string.length <= 10);
 }
 
-// delegate method for UIAlertView - handles methods for button presses
+/*
+ * delegate method for UIAlertView - handles methods for button presses
+ */
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     
     if (buttonIndex == 0) {
+#ifdef DEBUG
         NSLog(@"The cancel button was clicked");
-        
-        [serial close];
+#endif
         
         [alertrfid dismissWithClickedButtonIndex:0 animated:YES];
         [newrfidtagid setString:@""];
@@ -474,17 +532,11 @@
     
     // do stuff for additonal buttons
     if (buttonIndex == 1) {
-        
+#ifdef DEBUG
         NSLog(@"delegate method - save btn pressed");
+#endif
         [self saveTagIDtoAccount];
     }
-}
-
-/* End addRFID - Serial Communication */
-
-// method to change username label
-- (void)changeUSERNAME {
-    _lblUSERNAME.text = [ModelWelcome sharedModelWelcome].passedText;
 }
 
 -(void)updateCredit {
@@ -507,18 +559,18 @@
     // refine to just logged in user account
     for (Account *anAccount in mutableFetchResults) {
         if ([anAccount.username isEqualToString:_lblUSERNAME.text]) {
-            
+#ifdef DEBUG
             NSLog(@"%@ credit = %@",username,anAccount.credit);
-            
+#endif
             _creditX.text = [NSString stringWithFormat:@"%@",anAccount.credit];
         }
     }
 }
-
+#pragma mark RFID
 -(void)saveTagIDtoAccount {
-    
+#ifdef DEBUG
     NSLog(@"inside saveTagIDtoAccount method");
-    
+#endif
     // check validity of tagID
     if( [self tagIDCheck] == FALSE)
     {
@@ -544,10 +596,12 @@
         if ([anAccount.username isEqualToString:_lblUSERNAME.text]) {
             
             //log the text of _lblUSERNAME.text
+#ifdef DEBUG
             NSLog(@"_lblUSERNAME = %@",_lblUSERNAME.text);
-            
+#endif
+#ifdef DEBUG
             NSLog(@"%@ RFID tagID will = %@",_lblUSERNAME,newrfidtagid);
-            
+#endif
             // associate tagid to account
             [anAccount setValue:newrfidtagid forKey:@"rfid"];
         }
@@ -557,9 +611,9 @@
 
 // method to check if account already has tagID, returns a TRUE / FALSE
 -(BOOL)tagIDCheck {
-    
+#ifdef DEBUG
      NSLog(@"inside tagIDCheck method");
-    
+#endif
     // check if account already has tagID
     
     // query Core Data DB to see if username is already created
@@ -590,8 +644,9 @@
     if ([[mutableFetchResults valueForKey:@"rfid"] containsObject:[alertrfid textFieldAtIndex:0].text]) {
         
         // log
+#ifdef DEBUG
         NSLog(@"alert tf text = %@",[alertrfid textFieldAtIndex:0].text);
-        
+#endif
         // let user know tagid already taken
         [alertrfid setMessage:@"RFID tag associated to other account."];
         return TRUE;
@@ -633,32 +688,32 @@
     }
 }
 
-- (void)didDiscoverDevice:(DFBlunoDevice *)dev
-{
+- (void)didDiscoverDevice:(DFBlunoDevice *)dev {
     [self.blunoManager connectToDevice:dev];
+#ifdef DEBUG
     NSLog(@"Connected to %@",dev);
+#endif
     self.blunoDev = dev;
 }
 
-- (void)readyToCommunicate:(DFBlunoDevice *)dev
-{
+- (void)readyToCommunicate:(DFBlunoDevice *)dev {
 //    self.lbReady.text = @"Ready";
 }
 
-- (void)didDisconnectDevice:(DFBlunoDevice *)dev
-{
+- (void)didDisconnectDevice:(DFBlunoDevice *)dev {
 //    self.lbReady.text = @"Not Ready!";
     [self.blunoManager scan];
 }
 
-- (void)didWriteData:(DFBlunoDevice *)dev
-{
+- (void)didWriteData:(DFBlunoDevice *)dev {
     
 }
 
-- (void)didReceiveData:(NSData *)data Device:(DFBlunoDevice *)dev
-{
-//    self.lbReceiveMsg.text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+- (void)didReceiveData:(NSData *)data Device:(DFBlunoDevice *)dev {
 }
 
+# pragma mark - device orientation
+- (NSUInteger)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskAll;
+}
 @end

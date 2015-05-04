@@ -12,6 +12,7 @@
 #import "ViewControllerRootHomeCenter.h"
 #import "ViewControllerRootHomeLeftPanel.h"
 #import <QuartzCore/QuartzCore.h>
+#import "KCModalPickerView.h"
 
 #define CENTER_TAG 1
 #define LEFT_PANEL_TAG 2
@@ -24,69 +25,35 @@
 
 @interface ViewControllerRootHome () <ViewControllerRootHomeCenterDelegate>
 
-@property (nonatomic, strong) ViewControllerRootHomeCenter *viewControllerRootHomeCenter;
+//@property (nonatomic, strong) ViewControllerRootHomeCenter *viewControllerRootHomeCenter;
 @property (nonatomic, strong) ViewControllerRootHomeLeftPanel *viewControllerRootHomeLeftPanel;
 @property (nonatomic, assign) BOOL showingLeftPanel;
 
 @property (nonatomic, assign) BOOL showPanel;
 
+@property (strong, nonatomic) NSArray *items;
+@property (strong, nonatomic) UIPickerView *pickerView;
+
 @end
 
-@implementation ViewControllerRootHome
+@implementation ViewControllerRootHome {
+    
+}
 
 // synthesize the delegate
 @synthesize delegate; // synthesize ViewControllerRootHome delegate
 
-@synthesize rootHomeScroller = _rootHomeScroller;
-@synthesize tfDeleteAccount = _tfDeleteAccount;
-@synthesize btnDeleteAccount = _btnDeleteAccount;
-@synthesize btnDisplayAccount = _btnDisplayAccount;
-@synthesize btnDisplayEmail = _btnDisplayEmail;
-@synthesize tvDisplayAccount = _tvDisplayAccount;
-
-@synthesize switchRfid = _switchRfid;
-@synthesize tfCreditUsername = _tfCreditUsername;
-@synthesize tfCredit = _tfCredit;
-@synthesize btnAddCredit = _btnAddCredit;
-@synthesize lblCredit = _lblCredit;
-@synthesize lblRootCredit = _lblRootCredit;
-@synthesize btnLogout = _btnLogout;
-@synthesize btnCheckFlow = _btnCheckFlow;
-@synthesize btnSerialConsole = _btnSerialConsole;
-@synthesize btnLogs = _btnLogs;
-@synthesize btndev = _btndev;
-
-//tabbar crap
-@synthesize tbRoot = _tbRoot;
-@synthesize tbiUsers = _tbiUsers;
-@synthesize tbiMisc = _tbiMisc;
-@synthesize tbiDev = _tbiDev;
 
 
-// added for debugging purposes - program crash when removed :/
-@synthesize lblArduinoGood = _lblArduinoGood;
-@synthesize lblArduinoBad = _lblArduinoBad;
 
-// added dev3 btn for CoreBluetooth testing.
-@synthesize btnDev4 = _btnDev4;
-
-
-// Core Data
-@synthesize managedObjectContext = _managedObjectContext;
-
-// it is no longer necessary to synthesize properties in the .m file,
-// Xcode / Obj-C auto synthesizes properties with the "_" i.e.,
-// _mybutton
-
-
-#pragma mark NEW STUFF
+#pragma mark - load VC Root Home
 -(void)loadVCRH
 {
     // Load your RootMenu view here! (Check the .m file for LeftPanel where I updated the method that calls this if you're wondering how it gets called).
+    [self movePanelToOriginalPosition];
 }
 
-#pragma mark -
-#pragma mark View Will/Did Appear
+#pragma mark - View Will/Did Appear
 
 - (void)viewWillAppear:(BOOL)animated
 {
@@ -98,8 +65,7 @@
     [super viewDidAppear:animated];
 }
 
-#pragma mark -
-#pragma mark View Will/Did Disappear
+#pragma mark - View Will/Did Disappear
 
 - (void)viewWillDisappear:(BOOL)animated
 {
@@ -119,6 +85,9 @@
         self.viewControllerRootHomeLeftPanel = [[ViewControllerRootHomeLeftPanel alloc] initWithNibName:@"LeftPanelViewController" bundle:nil];
         self.viewControllerRootHomeLeftPanel.view.tag = LEFT_PANEL_TAG;
         // self.viewControllerRootHomeLeftPanel.delegate = _viewControllerRootHomeCenter; WTF is this
+        
+        // add via Owatch
+        [self.viewControllerRootHomeLeftPanel setMyDelegate:self];
         
         [self.view addSubview:self.viewControllerRootHomeLeftPanel.view];
         
@@ -153,16 +122,15 @@
         [_viewControllerRootHomeCenter.view.layer setCornerRadius:0.0f];
         [_viewControllerRootHomeCenter.view.layer setShadowOffset:CGSizeMake(offset, offset)];
     }
-
 }
 
 #pragma mark -
 #pragma mark Delegate Actions
 
 -(void)movePanelRight {
-    
+#ifdef DEBUG
     NSLog(@"inside movePanelRight method");
-    
+#endif
     UIView *childView = [self getLeftView];
     [self.view sendSubviewToBack:childView];
     
@@ -199,21 +167,10 @@
         self.showingLeftPanel = NO;
     }
     
-    // NO RIGHT PANEL IMPLEMENTED
-    
-//    if (_rightPanelViewController != nil) {
-//        [self.rightPanelViewController.view removeFromSuperview];
-//        self.rightPanelViewController = nil;
-//        _centerViewController.rightButton.tag = 1;
-//        self.showingRightPanel = NO;
-//    }
-    // remove view shadows
     [self showCenterViewWithShadow:NO withOffset:0];
 }
 
-
-#pragma mark -
-#pragma mark Setup View
+#pragma mark - Setup View
 
 - (void)setupView {
     self.viewControllerRootHomeCenter = [[ViewControllerRootHomeCenter alloc] initWithNibName:@"CenterViewController" bundle:nil];
@@ -227,8 +184,7 @@
     
 }
 
-#pragma mark -
-#pragma mark View Did Load/Unload
+#pragma mark - View Did Load/Unload
 
 - (void)viewDidLoad
 {
@@ -249,112 +205,23 @@
     // Core Data
     if (_managedObjectContext == nil)
     {
-        _managedObjectContext = [(AppDelegate *)[[UIApplication sharedApplication] delegate] managedObjectContext];
+        _managedObjectContext = [[AccountsDataModel sharedDataModel]mainContext];
+#ifdef DEBUG
         NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
+#endif
     }
     
-    // text view stuff
-//    [_tvDisplayAccount setScrollEnabled:TRUE];
-//    [_tvDisplayAccount setUserInteractionEnabled:YES];
-    
-    // declare nuke button
-//    nuke = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    
-    // set title for button
-//    [nuke setTitle:@"Nuke DB" forState:UIControlStateNormal];
-    
-    // set position (X, Y, bsizeW, bsizeH)
-//    nuke.frame = CGRectMake(100, 460, 150, 30);
-    
-    // listen for clicks
-//    [nuke addTarget:self action:@selector(deleteAllObjects)forControlEvents:UIControlEventTouchUpInside];
-    
-    // add nuke to the scrollview
-//    [self.rootHomeScroller addSubview:nuke];
-    
-    // Core Data - load root credits
     [self rootCreditAmount];
     
-    
-    // declare / initialize tfEmail
-//    tfEmail = [[UITextField alloc] initWithFrame:CGRectMake(10, 500, 250, 30)];
-//    
-//    tfEmail.borderStyle = UITextBorderStyleRoundedRect;
-//    tfEmail.textColor = [UIColor blackColor];
-//    tfEmail.font = [UIFont systemFontOfSize:17.0];
-//    tfEmail.placeholder = @"Enter Master Paypal Address.";
-//    tfEmail.backgroundColor = [UIColor whiteColor];
-//    tfEmail.autocorrectionType = UITextAutocorrectionTypeNo;
-//    tfEmail.keyboardType = UIKeyboardTypeDefault;
-//    tfEmail.returnKeyType = UIReturnKeyDone;
-//    
-//    [self.rootHomeScroller addSubview:tfEmail];
-    
-//    // declare / initialize btnEmailSave
-//    btnEmailSave = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-//    
-//    [btnEmailSave setTitle:@"SaveMasterEmail" forState:UIControlStateNormal];
-//    
-//    btnEmailSave.frame = CGRectMake(100, 550, 150, 30);
-//    
-//    [btnEmailSave addTarget:self action:@selector(saveMasterEmail)forControlEvents:UIControlEventTouchUpInside];
-//    
-//    [self.rootHomeScroller addSubview:btnEmailSave];
-    
-    
-//    // RFID switch
-//    UISwitch *switchRfid = [[UISwitch alloc] initWithFrame: CGRectMake(20, 550, 50, 50)];
-//    [switchRfid addTarget: self action: @selector(rfidOnOff) forControlEvents:UIControlEventValueChanged];
-//    // add switch to the desired frame
-//    [self.rootHomeScroller addSubview:switchRfid];
-//    
-//    [self rootCreditAmount];
-    
-//    //tabbar crap
-//    //[self.tbRoot setItems: _tbiUsers animated:TRUE];
-//    self.tbRoot.delegate = self;
-//    _tbiUsers.tag = 0;
-//    _tbiMisc.tag = 1;
-//    _tbiDev.tag = 2;
-
+    // load array items - TEMP ITEMS TO LOAD IN UIPICKERVIEW
+    self.items = [NSArray arrayWithObjects:@"Red",@"Green",@"Blue", nil];
 }
 
-- (void)viewDidUnload
-{
-    [self setTfDeleteAccount:nil];
-    [self setBtnDeleteAccount:nil];
-    [self setBtnDisplayAccount:nil];
-    [self setTvDisplayAccount:nil];
-    [self setBtnDisplayEmail:nil];
-    [self setTfCreditUsername:nil];
-    [self setTfCredit:nil];
-    [self setBtnAddCredit:nil];
-    [self setBtnLogout:nil];
-    [self setBtnLogout:nil];
-    [self setLblCredit:nil];
-    [self setLblRootCredit:nil];
-    //[self setBtnLogs:nil];
-    [self setBtnLogs:nil];
-    [self setBtnCheckFlow:nil];
-    [self setBtnSerialConsole:nil];
-    [self setBtndev:nil];
-    
-    
-    // added for debugging purposes
-    
-    [self setLblArduinoGood:nil];
-    [self setLblArduinoBad:nil];
-    
-    
-    [self setBtnFlowIndicator:nil];
-    //[self setShowFlowIndicator:nil];
-    [self setTbiUsers:nil];
-    [self setTbiUsers:nil];
-    [self setTbRoot:nil];
-    [self setTbiMisc:nil];
-    [self setTbiDev:nil];
-    [super viewDidUnload];
-    
+- (void)loadPickerView {
+    // load picker
+    KCModalPickerView *pickerView = [[KCModalPickerView alloc] initWithValues:self.items];
+    [pickerView presentInView:self.view withBlock:^(BOOL madeChoice) {
+    }];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -458,8 +325,9 @@
     // compare text field text / string with results in an array
     for (Account *anAccount in mutableFetchResults) {
         if([anAccount.username isEqualToString:self.tfDeleteAccount.text]) {
+#ifdef DEBUG
             NSLog(@"username found.");
-            
+#endif
             // delete keychain for account
             [anAccount prepareForDeletion];
             
@@ -493,28 +361,36 @@
     
     for (NSManagedObject *managedObject in items) {
         [_managedObjectContext deleteObject:managedObject];
+#ifdef DEBUG
         NSLog(@"%@ object deleted",entityDescription);
+#endif
     }
     if (![_managedObjectContext save:&error]) {
+#ifdef DEBUG
         NSLog(@"Error deleting %@ - error:%@",entityDescription,error);
+#endif
     }
     
 }
 
 - (IBAction)saveMasterEmail {
  //- (IBAction)saveMasterEmail:(id)sender {
-    
+#ifdef DEBUG
     NSLog(@"save master Email button pressed");
+#endif
     
 }
 - (IBAction)rfidOnOff {
 //- (IBAction)rfidToggle:(id)sender {
+#ifdef DEBUG
     NSLog(@"toogle");
+#endif
 }
 
 - (IBAction)addCredit:(id)sender {
-    
+#ifdef DEBUG
     NSLog(@"Add credit button pressed");
+#endif
     
     NSFetchRequest *request = [[NSFetchRequest alloc] init];
     
@@ -531,8 +407,9 @@
     }
     for (Account *anAccount in mutableFetchResults) {
         if ([anAccount.username isEqualToString:self.tfCreditUsername.text]) {
+#ifdef DEBUG
             NSLog(@"username found.");
-            
+#endif
             // get value stored in credit tf
             int credit = [_tfCredit.text integerValue];
             
@@ -541,17 +418,23 @@
             
             // add tf with current credit
             int newcredit = credit + creditcurrent;
+#ifdef DEBUG
             NSLog(@"new credit amount = %i",newcredit);
+#endif
             
             // save new value to anAccount.credit - convert int to NSNumber
             NSNumber *creditnew = [NSNumber numberWithInt:newcredit];
             anAccount.credit = creditnew;
-            NSLog(@"new credit amoutn = %@",creditnew); 
+#ifdef DEBUG
+            NSLog(@"new credit amoutn = %@",creditnew);
+#endif
 
             // save to DB
             NSError *error = nil;
             if (![_managedObjectContext save:&error]) {
+#ifdef DEBUG
                 NSLog(@"error %@", error);
+#endif
             }
             // update credit label
             _lblCredit.text = [NSString stringWithFormat:@"Credits added."];
@@ -560,41 +443,13 @@
 }
 
 - (IBAction)logout:(id)sender {
+#ifdef DEBUG
     NSLog(@"Logout button pressed");
+#endif
     
     [self dismissViewControllerAnimated:YES completion:nil];
     
 }
-
-- (IBAction)checkFlow:(id)sender {
-    
-    // btnCheckFlow pressed
-    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-    ViewControllerCheckFlow *checkFlow = (ViewControllerCheckFlow *)[storyboard instantiateViewControllerWithIdentifier:@"Check Flow"];
-    [self presentViewController:checkFlow animated:YES completion:nil];
-}
-
-- (IBAction)showSerialConsole:(id)sender {
-    
-    NSLog(@"Serial Pressed Begin");
-    //btnSerialConsole pressed
-    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-    ViewControllerSerialConsole *serialConsole = (ViewControllerSerialConsole *) [storyboard instantiateViewControllerWithIdentifier:@"Serial Console"];
-    [self presentViewController:serialConsole animated:YES completion:nil];
-    NSLog(@"Serial Pressed End");
-}
-
-- (IBAction)showLogs:(id)sender {
-    
-    // logs btn pressed
-    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-    ViewControllerLogs *logs = (ViewControllerLogs *)[storyboard instantiateViewControllerWithIdentifier:@"Logs"];
-    [self presentViewController:logs animated:YES completion:nil];
-    
-
-}
-
-
 
 - (void)rootCreditAmount {
     // Core Data - root credit amount
@@ -616,8 +471,9 @@
     // refine to just root account
     for (Account *anAccount in mutableFetchResults) {
         if ([anAccount.username isEqualToString:@"root"]) {
-                        
+#ifdef DEBUG
             NSLog(@"root credit = %@",anAccount.credit);
+#endif
             
             _lblRootCredit.text = [NSString stringWithFormat:@"root has %@ credits.",anAccount.credit];
         }
@@ -625,18 +481,14 @@
 }
 
 - (IBAction)showDev:(id)sender {
-    
+#ifdef DEBUG
     NSLog(@"dev button pressed");
-    //dev button pressed
-//    UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"MainStoryboard" bundle:nil];
-//    ViewControllerDev *dev = (ViewControllerDev *) [storyboard instantiateViewControllerWithIdentifier:@"dev"];
-//    [self presentModalViewController:dev animated:YES];
-    
+#endif
     UIViewController *dev = [self.storyboard instantiateViewControllerWithIdentifier:@"dev"];
     [self presentViewController:dev animated:YES completion:nil];
-    
-    
+#ifdef DEBUG
     NSLog(@"dev button press End");
+#endif
 }
 
 - (IBAction)showDev4:(id)sender {
@@ -646,13 +498,11 @@
 }
 
 - (IBAction)showFlowIndicator:(id)sender {
-    
+#ifdef DEBUG
     NSLog(@"flow indicator btn pressed");
-    
+#endif
     UIViewController *flow = [self.storyboard instantiateViewControllerWithIdentifier:@"KBFlowIndicator"];
     [self presentViewController:flow animated:YES completion:nil];
-    
-    
 }
 
 
@@ -666,29 +516,25 @@
     }
     
     if (item.tag==1) {
-        
+#ifdef DEBUG
         NSLog(@"misc btn tapped");
+#endif
         UIViewController *mapview = [self.storyboard instantiateViewControllerWithIdentifier:@"mapView"];
         [self presentViewController:mapview animated:YES completion:nil];
     }
     
     
     if (item.tag==2) {
+#ifdef DEBUG
         NSLog(@"dev btn tapped");
+#endif
         UIViewController *dev3 = [self.storyboard instantiateViewControllerWithIdentifier:@"dev3"];
         [self presentViewController:dev3 animated:YES completion:nil];
     }
 }
 
-
-// added for debugging purposes - program was crashing when following method / action was removed :/
-
-
-- (IBAction)testArduinoConnection:(id)sender {
-    
-    
+# pragma mark - device orientation
+- (NSUInteger)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskAll;
 }
-
-
-
 @end

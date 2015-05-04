@@ -7,52 +7,21 @@
 //
 
 #import <AudioToolbox/AudioToolbox.h>
-#import <UIKit/UIKit.h>
-#import <QuartzCore/QuartzCore.h> 
+#import <QuartzCore/QuartzCore.h>  // makes round buttons :)
 #import "AppDelegate.h"
 #import "Account.h"
-#import "ViewControllerHome.h"
 #import "ViewControllerRootHome.h"
-#import "ModelWelcome.h"
-#import "ViewControllerDev.h"
-// serial stuff
-#import "JailbrokenSerial.h"
+#import "NSData+AES256.h"
+#import <dispatch/dispatch.h> // Grand Central Dispatch
+#import "AFNetworking.h"
+#import "AccountsDataModel.h"
+#import "GlobalData.h"
+#import "ViewControllerHome.h"
 
-@interface ViewControllerWelcome : UIViewController <JailbrokenSerialDelegate>
-{
-    
-    // toolbar
-    IBOutlet UIToolbar *toolBar;
-    NSString *username;
-    
-    // serial stuff
-    JailbrokenSerial *serial;
-    
-    // RFID stuff
-    NSMutableString *scantagid;
-    
-    // legal disclaimer
-    UIAlertView *alertlegal;
-    
-    // Navigation bar
-    UINavigationBar *navBar;
-}
+@class ViewControllerWelcome;
 
-// Notes
-//
-// nonatomic means setter & getter are not thread safe
-// not a problem, because all UI code happens on main thread of
-// application.
+@interface ViewControllerWelcome : UIViewController <ViewControllerHomeDelegate>
 
-// "strong" - memory for object will stay around as long as needed.
-
-// All objects are always accessed via the heap. ALWAYS
-// that's why a pointer is used.
-//
-//
-//
-//
-// End Notes
 
 // Welcome screen
 @property (weak, nonatomic) IBOutlet UIScrollView *welcomeScroller;
@@ -62,9 +31,7 @@
 @property (weak, nonatomic) IBOutlet UIButton *welcomeLogin;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *welcomeActivityIndicator;
 
-// forgot username / pin button
 @property (weak, nonatomic) IBOutlet UIButton *btnForgot;
-
 @property (weak, nonatomic) IBOutlet UIButton *btnCreate;
 
 // info button - located lower right
@@ -96,7 +63,5 @@
 // keyboard toolbar
 - (IBAction) next:(id)sender;
 - (IBAction) prev:(id)sender;
-
-- (IBAction)processDev:(id)sender;
 
 @end

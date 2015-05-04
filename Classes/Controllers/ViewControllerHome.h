@@ -5,32 +5,32 @@
 //  Created by capin on 6/20/12.
 //
 
-#import <UIKit/UIKit.h>
+@class ViewControllerHome;
+
+@protocol ViewControllerHomeDelegate
+
+-(NSString *) receiveUserName;
+
+@end
+// put protocol declaration def above imports
+// see this SO thread, stackoverflow.com/questions/6447573
 #import "Account.h"
-#import "AppDelegate.h"
 #import "ViewControllerWelcome.h"
-#import "JailbrokenSerial.h"
-// add for CoreBluetooth functionality
 #import "DFBlunoManager.h"
+#import "ViewControllerAvatar4.h"
+#import "ViewControllerWelcome.h"
 
-
-
-// want to configure iPod Touch in peripheral mode, and have microcontroller in central mode.
-@interface ViewControllerHome : UIViewController <JailbrokenSerialDelegate, UITextFieldDelegate, DFBlunoDelegate>
+@interface ViewControllerHome : UIViewController <UITextFieldDelegate, DFBlunoDelegate, ViewControllerAvatar4Delegate>
 {
     UIButton *removeAccount;
     UIAlertView *alert;
     NSString *username;
     UILabel *lblUSERNAME;
-    // serial
-    JailbrokenSerial *serial;
     NSMutableString *rfidbadgenumber;
     UIAlertView *alertrfid;
     NSMutableString *newrfidtagid;
-    
-    }
-
-
+}
+@property (strong, nonatomic) id<ViewControllerHomeDelegate>delegate;
 @property (weak, nonatomic) IBOutlet UIScrollView *homeScroller;
 @property (weak, nonatomic) IBOutlet UILabel *lblUSERNAME;
 @property (weak, nonatomic) IBOutlet UILabel *creditX;
@@ -44,15 +44,11 @@
 @property (weak, nonatomic) IBOutlet UILabel *idleTimerTime;
 @property (weak, nonatomic) IBOutlet UIButton *captureAvatar;
 
-
-//test
 @property (weak, nonatomic) IBOutlet UIButton *btnTest;
-
 
 // Core Bluetooth
 @property(strong, nonatomic) DFBlunoManager *blunoManager;
 @property(strong, nonatomic) DFBlunoDevice *blunoDev;
-
 // Core Data
 @property (strong, nonatomic) NSManagedObjectContext *managedObjectContext;
 

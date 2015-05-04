@@ -8,38 +8,41 @@
 #import "ViewControllerCreate.h"
 #import "NSData+AES256.h"
 
-@interface ViewControllerCreate()
-
+@interface ViewControllerCreate() {
+    
+}
 @end
 
-@implementation ViewControllerCreate
-
-// create new account
-@synthesize createScroller = _createScroller;
-@synthesize createUserTextField = _createUserTextField;
-@synthesize createPinTextField = _createPinTextField;
-@synthesize createPinReTextField = _createPinReTextField;
-@synthesize createEmailTextField = _createEmailTextField;
-@synthesize createPhoneNumber = _createPhoneNumber;
-@synthesize createSubmit = _createSubmit;
-@synthesize createUNnotValid = _createUNnotValid;
-@synthesize createPinNotValid = _createPinNotValid;
-@synthesize createEmailNotValid = _createEmailNotValid;
-@synthesize createPhoneNumberNotValid = _createPhoneNumberNotValid;
-@synthesize createAccountSuccess = _createAccountSuccess;
-
-// keyboard toolbar
-@synthesize doneButton = _doneButton;
-
-// Core Data
-@synthesize managedObjectContext = _managedObjectContext;
-
+@implementation ViewControllerCreate {
+    
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
     
     
+    // create a programmatic navbar
+    // navBar
+    UINavigationBar *navBar = [[UINavigationBar alloc] init];
+    [navBar setFrame:CGRectMake(0,0,CGRectGetWidth(self.view.frame),60)];
+    
+    UINavigationItem *titleItem = [[UINavigationItem alloc] initWithTitle:@"Create Account"];
+    
+    navBar.items = @[titleItem];
+    
+    navBar.barTintColor = [UIColor colorWithRed:100.0f/255.0f
+                                          green:83.0f/255.0f
+                                           blue:0.0f/255.0f
+                                          alpha:1.0f];
+    navBar.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor colorWithRed:255.0f/255.0f
+                                                                                   green:239.0f/255.0f
+                                                                                    blue:160.0f/255.0f
+                                                                                   alpha:1.0f]};
+    navBar.translucent = NO;
+    
+    [self.view addSubview:navBar];
+    // END navBar
+	
     // create new account
     [_createUNnotValid setHidden:YES];
     [_createPinNotValid setHidden:YES];
@@ -67,42 +70,50 @@
     // Core Data
     if (_managedObjectContext == nil)
     {
-        _managedObjectContext = [(AppDelegate *)[[UIApplication sharedApplication] delegate] managedObjectContext];
+        _managedObjectContext = [[AccountsDataModel sharedDataModel]mainContext];
+#ifdef DEBUG
         NSLog(@"After _managedObjectContext: %@", _managedObjectContext);
+#endif
     }
     
     // keyboard behavior
     [self registerForKeyboardNotifications];
     
+    // change color of txt for tf's
+    _createUserTextField.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                      green:83.0f/255.0f
+                                                       blue:0.0f/255.0f
+                                                      alpha:1.0f];
+;
+    _createPinTextField.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                    green:83.0f/255.0f
+                                                     blue:0.0f/255.0f
+                                                    alpha:1.0f];
+;
+    _createPinReTextField.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                      green:83.0f/255.0f
+                                                       blue:0.0f/255.0f
+                                                      alpha:1.0f];
+;
+    _createEmailTextField.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                      green:83.0f/255.0f
+                                                       blue:0.0f/255.0f
+                                                      alpha:1.0f];
+;
+    _createPhoneNumber.textColor = [UIColor colorWithRed:100.0f/255.0f
+                                                   green:83.0f/255.0f
+                                                    blue:0.0f/255.0f
+                                                   alpha:1.0f];
+;
     
-    // Added 5AUG13 - trying to figure out how to dismiss view controller based upon view property / id
-    NSLog(@"The currently loaded view:%c",[self.view isKindOfClass:[ViewControllerCreate class]]);
+    
+    
+
 }
 
-
-- (void)viewDidUnload
-{
-    [self setCreateScroller:nil];
-    [self setCreateUserTextField:nil];
-    [self setCreatePinTextField:nil];
-    [self setCreateEmailTextField:nil];
-    [self setCreatePhoneNumber:nil];
-    [self setCreateSubmit:nil];
-    
-    [self setCreateUNnotValid:nil];
-    [self setCreatePinNotValid:nil];
-    [self setCreateEmailNotValid:nil];
-    [self setCreatePhoneNumberNotValid:nil];
-    [self setCreateAccountSuccess:nil];
-    
-    [self setCreatePinReTextField:nil];
-    [self setBtnCancel:nil];
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
-}
-
-// method to limit character input in text fields
-
+/*
+ * method to limit character input in text fields
+ */
 - (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
 {
     if(textField == _createUserTextField) return (_createUserTextField.text.length + string.length <=16);
@@ -116,12 +127,11 @@
 {
     currentTextField = textFieldView;
     [currentTextField setInputAccessoryView:toolBar];
-    
 }
 
-// method to determine values in text fields - compare pins, 
-// implement method to validate - createUserTextField, creatPinTextField, createEmailTextField, createPhoneTextField
-
+/*
+ * method to determine values in text fields - compare pins,
+ */
 - (void)textFieldDidEndEditing:(UITextField *)textField
 {
     currentTextField = nil;
@@ -131,36 +141,30 @@
    
     if ([pin isEqualToString: repin])
     {
+#ifdef DEBUG
         NSLog(@"Pins are equal.");
+#endif
         [_createPinNotValid setHidden:YES];
     }
     else {
         [_createPinNotValid setHidden:NO];
     }
-    
-    // check _createUserTextField against regular expression
-    //NSString *user = _createUserTextField.text;
-    
-    
-    // var regexp = /^[a-zA-Z0-9-_]+$/;
-
-    
-    // ?:[a-z][a-z]*[0-9]+[a-z0-9]*
-    
     // check _createEmailTextField
     if([self validateEmail:[_createEmailTextField text]] ==1)
 	{
         [_createEmailNotValid setHidden:YES];
+#ifdef DEBUG
         NSLog(@"code executed");
+#endif
     }
     else {
-        [_createEmailNotValid setHidden:NO];
+//        [_createEmailNotValid setHidden:NO];
     }
-    
-    // reg expression to validate phone number @"^\\+?[0-9]*$"
 }
 
-// method to determine screen layout
+/*
+ * method to determine screen layout
+ */
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     return YES;
@@ -175,8 +179,9 @@
 
 }
 
-
-// method - CREATE - to pull text from text fields and store in account database
+/*
+ * CREATE - to pull text from text fields and store in account database
+ */
 - (IBAction)createAccount:(id)sender {
     
     [self checkTextFieldCharLength];
@@ -184,11 +189,15 @@
     // check if create textfields are empty, check if boolean is YES / NO
     if([self checkTextFieldEmpty] == YES ) // empty text fields
     {
+#ifdef DEBUG
         NSLog(@"Please fill in text fields");
+#endif
     }
     
     else {
+#ifdef DEBUG
         NSLog(@"Thanks for filling out the text fields.");
+#endif
         
         
         // query Core Data DB to see if username is already created
@@ -232,10 +241,6 @@
                 [newAccount setValue:_createEmailTextField.text forKey:@"email"];
         [newAccount setValue:_createPhoneNumber.text forKey:@"phoneNumber"];
         
-        // store pin in keychain - OBSOLETE
-        // [newAccount setPassword:_createPinTextField.text];
-        
-        
         // password - set key
         NSString *key = @"donkey balls";
         
@@ -251,13 +256,11 @@
         printf("%s\n", [[cipher description] UTF8String]);
         
         // convert NSData to Base64 encoded NSString
-        NSString *cipherB64 = [self base64forData:cipher];
+        NSString *cipherB64 = [[NSData alloc] base64forData:cipher];
         
         [newAccount setValue:cipherB64 forKey:@"pin"];        
         
-        
         // NSLog(@"Pin saved is %@", [newAccount password]);
-        
         
         _createUserTextField.text = @"";
         _createEmailTextField.text = @"";
@@ -269,22 +272,17 @@
         [_managedObjectContext save:&error];
         
         [_createAccountSuccess setHidden:NO];
+#ifdef DEBUG
         NSLog(@"Succefully created account.");
+#endif
         
         // Load ViewControllerHome
-       // UIStoryboard *storyboard = [UIStoryboard storyboardWithName:@"iPhone" bundle:nil];
-        //ViewControllerHome *home = (ViewControllerHome *)[storyboard instantiateViewControllerWithIdentifier:@"Home"];
-        
         UIViewController *home = [self.storyboard instantiateViewControllerWithIdentifier:@"Home"];
-        
         
         // pass user tf text to home screen
         username = _createUserTextField.text;
         
-        [self passValues];
-        
         [self presentViewController:home animated:YES completion:nil];
-
     }
 }
 
@@ -302,13 +300,15 @@
     if ([_createPinTextField.text length] == 4) {
         [_createPinNotValid setHidden:YES];
     }
-    if ([_createEmailTextField.text length] >= 4 ) {
-        [_createEmailNotValid setHidden:YES];
-    }
-    if ([_createPhoneNumber.text length] == 10) {
-        [_createPhoneNumberNotValid setHidden:YES];
-    }
+//    if ([_createEmailTextField.text length] >= 4 ) {
+//        [_createEmailNotValid setHidden:YES];
+//    }
+//    if ([_createPhoneNumber.text length] == 10) {
+//        [_createPhoneNumberNotValid setHidden:YES];
+//    }
+#ifdef DEBUG
     NSLog(@"Passed text field char length.");
+#endif
 
 }
 
@@ -328,20 +328,21 @@
     {
         [_createPinNotValid setHidden:NO]; i++;
     }
-    if (_createEmailTextField.text.length == 0)
-    {
-        [_createEmailNotValid setHidden:NO]; i++;
-    }
-    if (_createPhoneNumber.text.length == 0)
-    {
-        [_createPhoneNumberNotValid setHidden:NO]; i++;
-    }
+//    if (_createEmailTextField.text.length == 0)
+//    {
+//        [_createEmailNotValid setHidden:NO]; i++;
+//    }
+//    if (_createPhoneNumber.text.length == 0)
+//    {
+//        [_createPhoneNumberNotValid setHidden:NO]; i++;
+//    }
 if (i >= 1) return YES; else return NO;
 }
 
 
-// method - validate email
-
+/*
+ * method - validate email
+ */
 - (BOOL) validateEmail: (NSString *) candidate 
 {
     NSString *emailRegex = @"[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}";
@@ -350,10 +351,10 @@ if (i >= 1) return YES; else return NO;
     return [emailTest evaluateWithObject:candidate];
 }
 
-// method - keyboard behavior
-
-- (void)registerForKeyboardNotifications
-{
+/*
+ * method - keyboard behavior
+ */
+- (void)registerForKeyboardNotifications {
     [[NSNotificationCenter defaultCenter] addObserver:self 
                                              selector:@selector(keyboardWasShown:)
                                                  name:UIKeyboardDidShowNotification object:nil];
@@ -363,9 +364,7 @@ if (i >= 1) return YES; else return NO;
                                                  name:UIKeyboardWillHideNotification object:nil];
 }
 
-- (void)keyboardWasShown:(NSNotification*)aNotification
-
-{
+- (void)keyboardWasShown:(NSNotification*)aNotification {
     
     NSDictionary* info = [aNotification userInfo];
     CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
@@ -382,9 +381,7 @@ if (i >= 1) return YES; else return NO;
     }
 }
 
-- (void)keyboardWillBeHidden:(NSNotification*)aNotification
-
-{
+- (void)keyboardWillBeHidden:(NSNotification*)aNotification {
     
     UIEdgeInsets contentInsets = UIEdgeInsetsZero;
     _createScroller.contentInset = contentInsets;
@@ -392,17 +389,18 @@ if (i >= 1) return YES; else return NO;
     
 }
 
-// methods - keyboard behavior
-
+/*
+ * methods - keyboard behavior
+ */
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
-    
+#ifdef DEBUG
     NSLog(@"method was loaded at startup");
-    NSLog(@"for the love of all that is free"); 
+#endif
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -460,45 +458,8 @@ if (i >= 1) return YES; else return NO;
     else if ([_createPhoneNumber isFirstResponder]) [self.createEmailTextField becomeFirstResponder];
     
 }
-
--(void) passValues {
-    ModelWelcome *modelwelcome = [ModelWelcome sharedModelWelcome];
-    modelwelcome.passedText = username;
+# pragma mark - device orientation
+- (NSUInteger)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskAll;
 }
-
-
-//from: http://www.cocoadev.com/index.pl?BaseSixtyFour
-- (NSString*)base64forData:(NSData*)theData {
-    
-    const uint8_t* input = (const uint8_t*)[theData bytes];
-    NSInteger length = [theData length];
-    
-    static char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-    
-    NSMutableData* data = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
-    uint8_t* output = (uint8_t*)data.mutableBytes;
-    
-    NSInteger i;
-    for (i=0; i < length; i += 3) {
-        NSInteger value = 0;
-        NSInteger j;
-        for (j = i; j < (i + 3); j++) {
-            value <<= 8;
-            
-            if (j < length) {
-                value |= (0xFF & input[j]);
-            }
-        }
-        
-        NSInteger theIndex = (i / 3) * 4;
-        output[theIndex + 0] =                    table[(value >> 18) & 0x3F];
-        output[theIndex + 1] =                    table[(value >> 12) & 0x3F];
-        output[theIndex + 2] = (i + 1) < length ? table[(value >> 6)  & 0x3F] : '=';
-        output[theIndex + 3] = (i + 2) < length ? table[(value >> 0)  & 0x3F] : '=';
-    }
-    
-    return [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-}
-
-
 @end

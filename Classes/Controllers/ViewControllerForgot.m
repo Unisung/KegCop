@@ -8,21 +8,9 @@
 #import "ViewControllerForgot.h"
 
 @interface ViewControllerForgot ()
-
-
-
 @end
 
-
-
 @implementation ViewControllerForgot
-
-
-// forgot email screen
-@synthesize forgotEmailInvalid = _forgotEmailInvalid;
-@synthesize forgotEmailSent = _forgotEmailSent;
-@synthesize textFieldEmailReset = _textFieldEmailReset;
-// end forgot email
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
@@ -33,22 +21,32 @@
     return self;
 }
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
-	// Do any additional setup after loading the view.
-}
+    // present UINavigationBar
+    // navBar
+    UINavigationBar *navBar = [[UINavigationBar alloc] init];
+    [navBar setFrame:CGRectMake(0,0,CGRectGetWidth(self.view.frame),60)];
+    
+    UINavigationItem *titleItem = [[UINavigationItem alloc] initWithTitle:@"Forgot Username / Pin"];
+    
+    navBar.items = @[titleItem];
+    
+    navBar.barTintColor = [UIColor colorWithRed:100.0f/255.0f
+                                          green:83.0f/255.0f
+                                           blue:0.0f/255.0f
+                                          alpha:1.0f];
+    navBar.titleTextAttributes = @{NSForegroundColorAttributeName: [UIColor colorWithRed:255.0f/255.0f
+                                                                                   green:239.0f/255.0f
+                                                                                    blue:160.0f/255.0f
+                                                                                   alpha:1.0f]};
+    navBar.translucent = NO;
+    
+    [self.view addSubview:navBar];
+    // end navBar
 
-- (void)viewDidUnload
-{
-    [self setForgotEmailInvalid:nil];
-    [self setForgotEmailSent:nil];
-    [self setTextFieldEmailReset:nil];
     
     
-    [self setBtnCancel:nil];
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -57,12 +55,10 @@
 }
 
 - (IBAction)dismissKeyboard:(id)sender {
-// forgot
-//[_textFieldEmailReset resignFirstResponder];
+
 }
 
 - (IBAction)dismissScene:(id)sender {
-    
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 @end

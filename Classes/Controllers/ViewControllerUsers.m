@@ -8,6 +8,8 @@
 
 #import "ViewControllerUsers.h"
 #import "NSData+AES256.h"
+#import "AccountsDataModel.h"
+#import "Account.h"
 
 @interface ViewControllerUsers ()
 
@@ -17,9 +19,7 @@
 
 // Core Data
 @synthesize managedObjectContext = _managedObjectContext;
-
 @synthesize uiPickerViewUsers = _uiPickerViewUsers;
-
 @synthesize usernames = _usernames;
 
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
@@ -31,16 +31,16 @@
     return self;
 }
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
-	// Do any additional setup after loading the view.
     
     // Core Data
     if (_managedObjectContext == nil)
     {
-        _managedObjectContext = [(AppDelegate *)[[UIApplication sharedApplication] delegate] managedObjectContext];
+        _managedObjectContext = [[AccountsDataModel sharedDataModel]mainContext];
+#ifdef DEBUG
         NSLog(@"After _managedObjectContext: %@",  _managedObjectContext);
+#endif
     }
 
     NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:@"Account"];
@@ -51,8 +51,9 @@
     request.returnsDistinctResults = YES;
 
     _usernames = [_managedObjectContext executeFetchRequest:request error:nil];
-   
+#ifdef DEBUG
     NSLog (@"names: %@",_usernames);
+#endif
 }
 
 
@@ -72,14 +73,9 @@
 {
     // set item per row
     // changed statment below per this SO thread,
-    // http://stackoverflow.com/questions/17331293/populate-uipicker-view-with-results-from-core-data-db-using-an-nsarray
+    // http://stackoverflow.com/questions/17331293/
     return _usernames[row][@"username"];
 }
-
-//-(NSInteger)selectedRowInComponent:(NSInteger)component
-//{
-//    NSLog(@"%d",[_uiPickerViewUsers selectedRowInComponent:0]);
-//}
 
 - (void)didReceiveMemoryWarning
 {
@@ -87,12 +83,6 @@
     // Dispose of any resources that can be recreated.
 }
 
-- (void)viewDidUnload {
-    [self setBtnDone:nil];
-    [self setUiPickerViewUsers:nil];
-    [self setBtnChangePin:nil];
-    [super viewDidUnload];
-}
 - (IBAction)dismissScene:(id)sender {
     
     [self dismissViewControllerAnimated:YES completion:nil];
@@ -105,7 +95,9 @@
     
     row = [_uiPickerViewUsers selectedRowInComponent:0];
     strSelectedUN = _usernames[row][@"username"];
+#ifdef DEBUG
     NSLog(@"The currently selected row is %@",strSelectedUN);
+#endif
     
     // create a compound string for title
     NSString *title = [NSString stringWithFormat:@"Change pin for %@",strSelectedUN];
@@ -125,8 +117,6 @@
     
     // keep this line at the bottom
     [alertview show];
-    
-    
 }
 
 - (void)saveNewPin{
@@ -139,7 +129,9 @@
     
     row = [_uiPickerViewUsers selectedRowInComponent:0];
     strSelectedUN = _usernames[row][@"username"];
+#ifdef DEBUG
     NSLog(@"The selected username is %@",strSelectedUN);
+#endif
     
     // get text from textfield's in UIAlertView, compare them, then store them in DB.
     pin = [alertview textFieldAtIndex:0].text;
@@ -148,8 +140,9 @@
     // compare if pins are equal
     if([pin isEqualToString: repin])
     {
+#ifdef DEBUG
         NSLog(@"pins are equal");
-        
+#endif
         
         key = @"donkey balls";
         
@@ -165,7 +158,7 @@
         printf("%s\n", [[cipher description] UTF8String]);
         
         // convert NSData to Base64 encoded NSString
-        NSString *cipherB64 = [self base64forData:cipher];
+        NSString *cipherB64 = [[NSData alloc ]base64forData:cipher];
         
         // Core Data - shit
         NSFetchRequest *request = [[NSFetchRequest alloc] init];
@@ -186,9 +179,11 @@
         // compare text field text / string with results in an array
         for (Account *pinAccount in mutableFetchResults) {
             if([pinAccount.username isEqualToString:strSelectedUN]) {
+#ifdef DEBUG
                 NSLog(@"username found.");
                 
                 NSLog(@"pinAccount = %@",pinAccount.username);
+#endif
                 
                 [pinAccount setValue:cipherB64 forKey:@"pin"];
                 
@@ -198,7 +193,9 @@
         }
     }
     else {
+#ifdef DEBUG
         NSLog(@"pins are not equal");
+#endif
     }
 }
 
@@ -211,48 +208,14 @@
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex {
     
-    if (buttonIndex ==0) {
+    if (buttonIndex == 0) {
         [alertView dismissWithClickedButtonIndex:0 animated:YES];
     }
     if (buttonIndex == 1) {
-        
+#ifdef DEBUG
         NSLog(@"btn 1 tapped");
-        
+#endif
         [self saveNewPin];
     }
 }
-
-//from: http://www.cocoadev.com/index.pl?BaseSixtyFour
-- (NSString*)base64forData:(NSData*)theData {
-    
-    const uint8_t* input = (const uint8_t*)[theData bytes];
-    NSInteger length = [theData length];
-    
-    static char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-    
-    NSMutableData* data = [NSMutableData dataWithLength:((length + 2) / 3) * 4];
-    uint8_t* output = (uint8_t*)data.mutableBytes;
-    
-    NSInteger i;
-    for (i=0; i < length; i += 3) {
-        NSInteger value = 0;
-        NSInteger j;
-        for (j = i; j < (i + 3); j++) {
-            value <<= 8;
-            
-            if (j < length) {
-                value |= (0xFF & input[j]);
-            }
-        }
-        
-        NSInteger theIndex = (i / 3) * 4;
-        output[theIndex + 0] =                    table[(value >> 18) & 0x3F];
-        output[theIndex + 1] =                    table[(value >> 12) & 0x3F];
-        output[theIndex + 2] = (i + 1) < length ? table[(value >> 6)  & 0x3F] : '=';
-        output[theIndex + 3] = (i + 2) < length ? table[(value >> 0)  & 0x3F] : '=';
-    }
-    
-    return [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-}
-
 @end

@@ -6,38 +6,112 @@
 //
 
 #import "AppDelegate.h"
-#import "AccountBase.h"
 #import "ViewControllerWelcome.h"
+#import "AccountsDataModel.h"
+#import <RestKit/RestKit.h>
+#import "ViewControllerIntro.h"
 
-// It loads the view controller and puts it into the window.
+@interface AppDelegate () {
 
-@implementation AppDelegate
+}
+@end
 
+@implementation AppDelegate {
 
-@synthesize window = _window;
+}
 
-@synthesize managedObjectContext = __managedObjectContext; // gateway into saving objects, NOT thread safe
-@synthesize managedObjectModel = __managedObjectModel;
-@synthesize persistentStoreCoordinator = __persistentStoreCoordinator;
++ (id)sharedManager {
+    static AppDelegate *sharedAppDelegate = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sharedAppDelegate = [[self alloc] init];
+    });
+    return sharedAppDelegate;
+}
 
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
-    // Override point for customization after application launch.
-     ViewControllerWelcome *viewControllerWelcome = (ViewControllerWelcome *)[[ViewControllerWelcome alloc]init];
-    
-    NSManagedObjectContext *context = (NSManagedObjectContext *) [self managedObjectContext];
-    if (!context) {
-        NSLog(@"\nCould not create *context for self");
-        
+- (id)init {
+    if (self = [super init]) {
+#ifdef DEBUG
+        NSLog(@"device token = %@",_deviceToken);
+#endif
     }
+    return self;
+}
+
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     
-    [viewControllerWelcome setManagedObjectContext:context];
+    // set cache for intro view
+    NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity: 20 * 1024 * 1024 diskPath:nil];
+    [NSURLCache setSharedURLCache:urlCache];
+    
+    //-- Set Notification
+    if ([application respondsToSelector:@selector(isRegisteredForRemoteNotifications)]) {
+        // iOS 8 Notifications
+        [application registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:(UIUserNotificationTypeSound | UIUserNotificationTypeAlert | UIUserNotificationTypeBadge) categories:nil]];
+        
+        [application registerForRemoteNotifications];
+    }
+    else {
+        // iOS < 8 Notifications
+        [application registerForRemoteNotificationTypes:
+            (UIRemoteNotificationTypeBadge | UIRemoteNotificationTypeAlert | UIRemoteNotificationTypeSound)];
+    }
+    // could not access deviceToken from this method :'(
+    
+    // add RestKit singleton class for setting up base URI for app.
+//    RKObjectManager *rkom = [RKObjectManager managerWithBaseURL:[NSURL URLWithString:@"http://kegcop.chrisrjones.com"]];
+    
+    // Override point for customization after application launch.
+//    _storyboard = [UIStoryboard storyboardWithName:@"iPhone"  bundle:[NSBundle mainBundle]];
+//    UIViewController *vcWelcome = [_storyboard instantiateInitialViewController];
+    ViewControllerIntro *vcIntro = [[ViewControllerIntro alloc] initWithNibName:@"ViewControllerIntro" bundle:nil];
+    self.window.rootViewController = vcIntro;
+    
+    NSManagedObjectContext *context = [[AccountsDataModel sharedDataModel] mainContext];
+    if (context) {
+#ifdef DEBUG
+
+        NSLog(@"Context is ready!");
+#endif
+    } else {
+#ifdef DEBUG
+        NSLog(@"Context was nil :(");
+#endif
+    }
     
     // see this SO thread - stackoverflow.com/questions/1768881
     [application setStatusBarHidden:NO];
     [application setStatusBarStyle:UIStatusBarStyleLightContent];
     
     return YES;
+}
+
+- (NSData *) obtainDeviceToken {
+    return self.deviceToken;
+}
+
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+#ifdef DEBUG
+    NSLog(@"Did Register for Remote Notifications with Device Token (%@)", deviceToken);
+#endif
+    
+    // save deviceToken to string
+    _tokenString = [[[NSString stringWithFormat:@"%@", deviceToken] stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"<>" ]] stringByReplacingOccurrencesOfString:@" " withString:@"" ];
+#ifdef DEBUG
+    NSLog(@"_tokenString = %@",_tokenString);
+#endif
+    
+    // save string to NSUserDefaults
+    [[NSUserDefaults standardUserDefaults] setObject:_tokenString forKey:@"uniqueTokenString"];
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+#ifdef DEBUG
+    NSLog(@"Did Fail to Register for Remote Notifications");
+    NSLog(@"%@, %@", error, error.localizedDescription);
+#endif
+    
 }
 							
 - (void)applicationWillResignActive:(UIApplication *)application
@@ -65,145 +139,6 @@
 - (void)applicationWillTerminate:(UIApplication *)application
 {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-}
-
-// code added to implement Core Data in Single View App
-- (void)saveContext
-{
-    NSError *error = nil;
-    NSManagedObjectContext *managedObjectContext = self.managedObjectContext;
-    if (managedObjectContext != nil) {
-        if ([managedObjectContext hasChanges] && ![managedObjectContext save:&error]) {
-            // Replace this implementation with code to handle the error appropriately.
-            // abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development. 
-            NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-            abort();
-        } 
-    }
-}
-
-#pragma mark - Core Data stack
-
-// Returns the managed object context for the application.
-// If the context doesn't already exist, it is created and bound to the persistent store coordinator for the application.
-- (NSManagedObjectContext *)managedObjectContext
-{
-    if (__managedObjectContext != nil) {
-        return __managedObjectContext;
-    }
-    
-    NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
-    if (coordinator != nil) {
-        __managedObjectContext = [[NSManagedObjectContext alloc] init];
-        [__managedObjectContext setPersistentStoreCoordinator:coordinator];
-    }
-    return __managedObjectContext;
-}
-
-// Returns the managed object model for the application.
-// If the model doesn't already exist, it is created from the application's model.
-- (NSManagedObjectModel *)managedObjectModel
-{
-    if (__managedObjectModel != nil) {
-        return __managedObjectModel;
-    }
-    NSURL *modelURL = [[NSBundle mainBundle] URLForResource:@"Accounts" withExtension:@"momd"];
-    __managedObjectModel = [[NSManagedObjectModel alloc] initWithContentsOfURL:modelURL];
-    return __managedObjectModel;
-}
-
-// Returns the persistent store coordinator for the application.
-// If the coordinator doesn't already exist, it is created and the application's store added to it.
-- (NSPersistentStoreCoordinator *)persistentStoreCoordinator
-{
-    if (__persistentStoreCoordinator != nil) {
-        return __persistentStoreCoordinator;
-    }
-    
-    // default sqlite file path
-    // NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"Accounts.sqlite"];
-    
-    
-    
-    // add conditional code for simulator and iDevice
-#if TARGET_IPHONE_SIMULATOR
-    NSArray *documentPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    
-    NSString *docPath = [documentPaths objectAtIndex:0];
-    
-    NSURL *storeURL = [NSURL fileURLWithPath: [docPath stringByAppendingPathComponent:@"Accounts.sqlite"]];
-#else
-    // jailbroken path - /var/mobile/Library/Kegcop/
-    NSString *docPath = self.documentsDirectoryPath;
-    
-    NSURL *storeURL = [NSURL fileURLWithPath: [docPath stringByAppendingPathComponent:@"Accounts.sqlite"]];
-#endif
-    
-    // NSURL *storeURL = [NSURL fileURLWithPath: [docPath stringByAppendingPathComponent:@"Accounts.sqlite"]];
-    NSError *error = nil;
-    __persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
-    if (![__persistentStoreCoordinator addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:storeURL options:nil error:&error]) {
-        /*
-         Replace this implementation with code to handle the error appropriately.
-         
-         abort() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development. 
-         
-         Typical reasons for an error here include:
-         * The persistent store is not accessible;
-         * The schema for the persistent store is incompatible with current managed object model.
-         Check the error message to determine what the actual problem was.
-         
-         
-         If the persistent store is not accessible, there is typically something wrong with the file path. Often, a file URL is pointing into the application's resources directory instead of a writeable directory.
-         
-         If you encounter schema incompatibility errors during development, you can reduce their frequency by:
-         * Simply deleting the existing store:
-         [[NSFileManager defaultManager] removeItemAtURL:storeURL error:nil]
-         
-         * Performing automatic lightweight migration by passing the following dictionary as the options parameter: 
-         [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], NSMigratePersistentStoresAutomaticallyOption, [NSNumber numberWithBool:YES], NSInferMappingModelAutomaticallyOption, nil];
-         
-         Lightweight migration will only work for a limited set of schema changes; consult "Core Data Model Versioning and Data Migration Programming Guide" for details.
-         
-         */
-        NSLog(@"Unresolved error %@, %@", error, [error userInfo]);
-        abort();
-    }    
-    
-    return __persistentStoreCoordinator;
-}
-
-#pragma mark - Application's Documents directory
-
-// Returns the URL to the application's Documents directory.
-- (NSURL *)applicationDocumentsDirectory
-{
-    return [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask] lastObject];
-}
-
-// set path for documents in jailbreak environment
--(NSString *)documentsDirectoryPath
-{
-#ifdef JAILBREAK
-    
-    NSString *documentPath =@"/var/mobile/Library/KegCop/";
-    
-    if (![[NSFileManager defaultManager] fileExistsAtPath:documentPath])
-    {
-        [[NSFileManager defaultManager] createDirectoryAtPath:documentPath
-                                  withIntermediateDirectories:NO
-                                                   attributes:nil
-                                                        error:NULL];
-    }
-    
-    return documentPath;
-
-#else
-    
-    NSArray *documentPaths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-    return [documentPaths objectAtIndex:0];
-
-#endif
 }
 
 @end

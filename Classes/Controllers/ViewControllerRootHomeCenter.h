@@ -1,12 +1,13 @@
 //
 //  ViewControllerRootHomeCenter.h
-//  KegCop
 //
-//  Created by capin on 11/19/14.
+//
+//
 //
 //
 
 #import "ViewControllerRootHomeLeftPanel.h"
+#import "ViewControllerCalibrate.h"
 
 @protocol ViewControllerRootHomeCenterDelegate;
 @protocol ViewControllerRootHomeCenterDelegate <NSObject>
@@ -15,19 +16,18 @@
 - (void)movePanelLeft;
 - (void)movePanelRight;
 
-
 @required
 - (void)movePanelToOriginalPosition;
-
 @end
 
-@interface ViewControllerRootHomeCenter : UIViewController <ViewControllerRootHomeCenterDelegate> {
-}
+IB_DESIGNABLE
+
+@interface ViewControllerRootHomeCenter : UIViewController <ViewControllerRootHomeCenterDelegate, ViewControllerCalibrateDelegate>
 
 @property (nonatomic, weak) id<ViewControllerRootHomeCenterDelegate> delegate;
+@property (strong, nonatomic) IBOutlet UIView *viewRootHomeCenter;
 
-@property (nonatomic, weak) IBOutlet UIButton *leftButton;
-@property (nonatomic, strong) IBOutlet UINavigationBar *navBar;
-@property (nonatomic, strong) IBOutlet UIBarButtonItem *hamMenu;
-
+@property (nonatomic, strong) IBInspectable UIButton *leftButton;
+@property (nonatomic, strong) IBInspectable UINavigationBar *navBar;
+@property (nonatomic, strong) IBInspectable UIBarButtonItem *hamMenu;
 @end

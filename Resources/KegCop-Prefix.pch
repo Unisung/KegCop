@@ -1,7 +1,4 @@
-//
-// Prefix header for all source files of the 'KegCop' target in the 'KegCop' project
-//
-
+// header for all source files of the target in the 'KegCop' project
 // Precompilation is a technique to accelerate the compilation process.
 
 #import <Availability.h>
@@ -11,12 +8,12 @@
 #endif
 
 #ifdef __OBJC__
-    #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
-    #import <CoreData/CoreData.h>
-    #import <Security/Security.h>
-    // add below framework to use mapkit
-    #import <MapKit/MapKit.h>
 #endif
 
-#define JAILBREAK
+#ifdef DEBUG
+#   define DLog(...) NSLog(__VA_ARGS__)
+#else
+#   define DLog(...) /* */
+#endif
+#define ALog(...) NSLog(__VA_ARGS__)

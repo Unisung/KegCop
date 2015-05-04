@@ -6,10 +6,8 @@
 //
 //
 
+#import <CoreData/CoreData.h>
 #import <UIKit/UIKit.h>
-#import "Account.h"
-#import "AppDelegate.h"
-#import <CommonCrypto/CommonCrypto.h>
 
 @interface ViewControllerUsers : UIViewController <NSFetchedResultsControllerDelegate, UIPickerViewDelegate, UIPickerViewDataSource>
 {
@@ -39,5 +37,4 @@
 - (IBAction)dismissScene:(id)sender;
 
 - (IBAction)changePin:(id)sender;
-
 @end
