@@ -7,11 +7,13 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "removeCalibrateProtocol.h"
+
 @protocol ViewControllerCalibrateDelegate;
-@protocol ViewControllerCalibrateDelegate <NSObject>
+@protocol ViewControllerCalibrateDelegate <NSObject> // Don\t need any of this I made new protocol
 - (void) removeCalibrateView;
 @end
 
-@interface ViewControllerCalibrate : UIViewController
-@property (nonatomic, weak) id<ViewControllerCalibrateDelegate> delegate;
+@interface ViewControllerCalibrate : UIViewController <removeCalibrateProtocol>
+//@property (nonatomic, weak) id<ViewControllerCalibrateDelegate> delegate; NOT HERE
 @end

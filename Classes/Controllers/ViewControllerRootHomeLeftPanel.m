@@ -219,6 +219,9 @@
     
     ViewControllerCalibrate *calibrateVC = [[ViewControllerCalibrate alloc] initWithNibName:@"ViewControllerCalibrate" bundle:nil];
     [((ViewControllerRootHome *)self.parentViewController).viewControllerRootHomeCenter addChildViewController:calibrateVC];
+    // DELEGATE
+    [((ViewControllerRootHome *)self.parentViewController).viewControllerRootHomeCenter setNewDelegate:calibrateVC];
+    
     [calibrateVC.view setFrame:CGRectMake(0.0f, 64.0f, self.view.frame.size.width, self.view.frame.size.height)];
     
     [calibrateVC didMoveToParentViewController:((ViewControllerRootHome *)self.parentViewController).viewControllerRootHomeCenter];

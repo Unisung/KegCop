@@ -18,6 +18,11 @@
 
 @implementation ViewControllerCalibrate
 
+-(void)removeCalibrate
+{
+    [self removeCalibrateView];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     // view tag is necessary for disposing VC from left panel using ham menu

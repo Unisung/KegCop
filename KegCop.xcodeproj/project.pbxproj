@@ -82,6 +82,7 @@
 /* Begin PBXFileReference section */
 		16C5175EAEC3CBA524390977 /* Pods.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.release.xcconfig; path = "Pods/Target Support Files/Pods/Pods.release.xcconfig"; sourceTree = "<group>"; };
 		4CC4EEE47EAB4A04A9448C12 /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B0416781AF7E62100C912EE /* removeCalibrateProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = removeCalibrateProtocol.h; sourceTree = "<group>"; };
 		C1317D6D5FB97FE0337AA7E1 /* Pods.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.debug.xcconfig; path = "Pods/Target Support Files/Pods/Pods.debug.xcconfig"; sourceTree = "<group>"; };
 		D80D09334B60A38D84A28F02 /* libPods-KegCopTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-KegCopTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA0167371ABE16C500A98B2F /* Accounts 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Accounts 2.xcdatamodel"; sourceTree = "<group>"; };
@@ -423,6 +424,7 @@
 				EAC2D8E91AAFB86D0075EAB0 /* returnToRootHome.h */,
 				EAC2D90A1AAFB86D0075EAB0 /* ViewControllerUsers.h */,
 				EAC2D90B1AAFB86D0075EAB0 /* ViewControllerUsers.m */,
+				6B0416781AF7E62100C912EE /* removeCalibrateProtocol.h */,
 			);
 			path = Controllers;
 			sourceTree = "<group>";
